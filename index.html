@@ -349,39 +349,7 @@
             <button id="btnNuevoArchivo" class="btn btn-lg btn-inkafarma" type="button">
                 Insertar tu Excel de política de devolución
             </button>
-            
         </div>
-        <div style="
-    margin-top: 30px;
-    padding: 20px;
-    max-width: 850px;
-    margin-left:auto;
-    margin-right:auto;
-    background:#ffffff;
-    border-radius:10px;
-    box-shadow:0 4px 12px rgba(0,0,0,0.1);
-    text-align:center;
-">
-
-    <h1 style="font-size:18px; color:#007bff; font-weight:bold;">
-        ℹ️ NOTA IMPORTANTE
-    </h1>
-
-    <p style="font-size:13px; color:#333; font-weight:bold; line-height:1.6;">
-        Esta herramienta ha sido creada como un buscador rápido de políticas de devolución, con el fin de evitar los tiempos prolongados al trabajar directamente en archivos Excel de gran tamaño.
-
-        Permite acceder de manera ágil y sencilla a la información, facilitando la consulta de datos sin necesidad de recorrer manualmente hojas extensas o realizar búsquedas complejas.
-
-        Su objetivo es mejorar la eficiencia en el trabajo diario, brindando una forma más rápida, organizada y práctica de encontrar la información necesaria.
-
-        <br><br>
-        <span style="font-size:12px; color:#666;">
-            Desarrollo realizado como apoyo operativo para optimizar el proceso de búsqueda.
-        </span>
-    </p>
-
-</div>
-
     </div>
 
     <!-- APLICACIÓN PRINCIPAL -->
@@ -472,7 +440,7 @@
 
                 <!-- Información de Lote y Vida Útil (JSON) -->
 
-                <div id="panelLote" class="row mb-3" style="display:none;">
+                <div id="panelLote" class="row mb-3" style="display:none !important; visibility:hidden !important; height:0 !important; overflow:hidden !important;">
                     <div class="col-md-12">
                         <div class="p-3 border rounded shadow-sm"
                             style="background-color: #fff9f5; border-color: #fee3d0 !important;">
@@ -2097,6 +2065,55 @@ Por favor, proporciona la información farmacéutica completa siguiendo el forma
             actualizarTabla();
         });
     </script>
-</body>
+
+    <div class="modal fade" id="loteInfoModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Información de Lote y Vida Útil <small style="font-size:12px;">(ESC para cerrar)</small></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-3"><b>CÓD. POSU GENERAL:</b><p id="modalPosu"></p></div>
+              <div class="col-md-3"><b>PRODUCTO:</b><p id="modalProducto"></p></div>
+              <div class="col-md-3"><b>TIEMPO DE VIDA ÚTIL:</b><p id="modalVida"></p></div>
+              <div class="col-md-3"><b>LECTURA DE LOTE:</b><p id="modalLote"></p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+<script>
+let loteInfoModal;
+document.addEventListener('DOMContentLoaded',()=>{
+ const el=document.getElementById('loteInfoModal');
+ if(el){ loteInfoModal=new bootstrap.Modal(el); }
+ document.addEventListener('keydown',function(e){
+   if(e.key==='F2'){
+     e.preventDefault();
+     const btn=document.getElementById('btnToggleLote');
+     if(btn && btn.classList.contains('btn-success')){
+       document.getElementById('modalPosu').textContent=document.getElementById('labelPosuGeneral')?.textContent||'';
+       document.getElementById('modalProducto').textContent=document.getElementById('labelProveedorLote')?.textContent||'';
+       document.getElementById('modalVida').textContent=document.getElementById('labelTiempoVida')?.textContent||'';
+       document.getElementById('modalLote').textContent=document.getElementById('labelLecturaLote')?.textContent||'';
+       loteInfoModal?.show();
+     }
+   }
+   if(e.key==='Escape'){ loteInfoModal?.hide(); }
+ });
+ const b=document.getElementById('btnToggleLote');
+ if(b){ b.onclick=function(){
+   if(this.classList.contains('btn-danger')) return;
+   document.getElementById('modalPosu').textContent=document.getElementById('labelPosuGeneral')?.textContent||'';
+   document.getElementById('modalProducto').textContent=document.getElementById('labelProveedorLote')?.textContent||'';
+   document.getElementById('modalVida').textContent=document.getElementById('labelTiempoVida')?.textContent||'';
+   document.getElementById('modalLote').textContent=document.getElementById('labelLecturaLote')?.textContent||'';
+   loteInfoModal?.show();
+ }; }
+});
+</script></body>
 
 </html>
