@@ -1,0 +1,2102 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Canjes - Mifarma</title>
+
+    <!-- Dependencias externas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="icon" href="MIFARMA_ICONS.png" type="image/png">
+
+    <style>
+        /* Variables del tema - NARANJA */
+        :root {
+            --inkafarma-orange: #1c7cfa;
+            --inkafarma-orange-dark: #1590d8;
+            --inkafarma-orange-light: #040fad;
+        }
+
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f8f9fa;
+            zoom: 0.97;
+        }
+
+        .app-container {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 0.5rem;
+        }
+
+        .container-fluid{
+            max-width: 1150px;
+            margin: auto;
+        }
+
+        .form-container,
+        .table-container {
+            padding: 1rem;
+        }
+
+        .app-title{
+            font-size: 1.2rem;
+        }
+
+        
+.fila-reciente td {
+    animation: resaltarFila 3s ease !important;
+}
+
+.celda-urgente-destacada {
+    animation: resaltarUrgente 3s ease !important;
+    border-radius: 6px;
+    font-weight: 600;
+    color: #c40000 !important;
+}
+
+@keyframes resaltarFila {
+    0% {
+        background-color: #ffe7d6;
+    }
+
+    40% {
+        background-color: #ffd2b5;
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+@keyframes resaltarUrgente {
+    0% {
+        background-color: #fff4a3;
+        color: #c40000;
+    }
+
+    50% {
+        background-color: #ffe36e;
+        color: #b10000;
+    }
+
+    100% {
+        background-color: transparent;
+        color: inherit;
+    }
+}
+
+            100% {
+                background-color: transparent;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .app-title{
+                font-size: 1rem;
+            }
+
+            .form-container,
+            .table-container {
+                padding: 0.8rem;
+            }
+
+            .btn{
+                font-size: 0.9rem;
+            }
+
+            .form-control,
+            .input-group-text{
+                font-size: 0.9rem;
+            }
+
+            .app-header{
+                padding: 0.3rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body{
+                zoom: 1;
+            }
+
+            .app-container{
+                max-width: 100%;
+                padding: 0.3rem;
+            }
+
+            .app-title{
+                font-size: 0.9rem;
+                text-align:center;
+            }
+
+            .form-container,
+            .table-container {
+                padding: 0.7rem;
+            }
+
+            #btnGuardar{
+                width: 100%;
+                margin-top: 0.5rem;
+                position: sticky;
+                bottom: 10px;
+                z-index: 50;
+            }
+        }
+
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Pantalla de bienvenida */
+        .welcome-screen {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-image: url('background.jpg');
+            background-size: cover;
+            background-position: center;
+            color: white;
+        }
+
+        .welcome-title {
+            color: var(--inkafarma-orange);
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .welcome-logo {
+            width: 80vw;
+            /* 80% del ancho de la pantalla */
+            max-width: 600px;
+            /* límite máximo */
+            height: auto;
+        }
+
+        .welcome-logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 3rem 0;
+        }
+
+        /* Encabezado */
+        .app-header {
+            background-color: white;
+            padding: 0.5rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .app-title {
+            color: var(--inkafarma-orange);
+            font-weight: bold;
+        }
+
+        /* Contenedores */
+        .form-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            font-weight: 500;
+        }
+
+        .readonly-field {
+            background-color: #f8f9fa;
+            font-weight: 500;
+        }
+
+        .readonly-field.campo-llenado {
+            background-color: #ffe8d9 !important;
+            color: #007eb8;
+        }
+
+        /* Botones */
+        .btn-inkafarma {
+            background-color: var(--inkafarma-orange);
+            color: white;
+            border: none;
+        }
+
+        .btn-inkafarma:hover {
+            background-color: var(--inkafarma-orange-dark);
+            color: white;
+        }
+
+        .btn-inkafarma-outline {
+            border: 1px solid var(--inkafarma-orange);
+            color: var(--inkafarma-orange);
+        }
+
+        .btn-inkafarma-outline:hover {
+            background-color: var(--inkafarma-orange-light);
+            color: white;
+        }
+
+        /* Tabla */
+        .table-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        #productosTable {
+            width: 100% !important;
+        }
+
+        #productosTable thead th {
+            background-color: #f1f1f1;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .table-actions .btn {
+            padding: 0.25rem 0.5rem;
+            margin-right: 0.25rem;
+            font-size: 0.875rem;
+        }
+
+        /* Badges */
+        .badge-policy {
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .badge-tiene {
+            background-color: #ffe8d9;
+            color: #0075b8;
+        }
+
+        .badge-no-tiene {
+            background-color: #f8d7da;
+            color: #842029;
+        }
+
+        .badge-excepcional {
+            background-color: #fff3cd;
+            color: #664d03;
+        }
+
+        .counter-badge {
+            background-color: var(--inkafarma-orange);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        /* Modales */
+        .modal-header {
+            background-color: var(--inkafarma-orange);
+            color: white;
+        }
+
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        /* Estilos para botones del modal de exportación */
+        .export-option-btn {
+            border: 2px solid #e0e0e0;
+            background: white;
+            text-align: left;
+            transition: all 0.2s;
+        }
+
+        .export-option-btn:hover {
+            border-color: var(--inkafarma-orange);
+            background-color: #fff5ee;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- PANTALLA DE BIENVENIDA -->
+    <div id="welcomeScreen" class="welcome-screen">
+        <h1 class="welcome-title display-4">
+            ¡BIENVENIDOS A GESTIÓN DE CANJES!<br>¡Vamos a Realizar tus políticas!
+        </h1>
+        <div class="welcome-logo-container">
+            <img src="MIFARMA_LOGO.png" alt="Logo Mifarma" class="welcome-logo">
+        </div>
+        <div class="d-flex flex-column gap-3">
+            <button id="btnUltimoArchivo" class="btn btn-lg btn-inkafarma-outline d-none" type="button">
+                Usar último archivo trabajado
+            </button>
+            <button id="btnNuevoArchivo" class="btn btn-lg btn-inkafarma" type="button">
+                Insertar tu Excel de política de devolución
+            </button>
+            
+        </div>
+        <div style="
+    margin-top: 30px;
+    padding: 20px;
+    max-width: 850px;
+    margin-left:auto;
+    margin-right:auto;
+    background:#ffffff;
+    border-radius:10px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.1);
+    text-align:center;
+">
+
+    <h1 style="font-size:18px; color:#007bff; font-weight:bold;">
+        ℹ️ NOTA IMPORTANTE
+    </h1>
+
+    <p style="font-size:13px; color:#333; font-weight:bold; line-height:1.6;">
+        Esta herramienta ha sido creada como un buscador rápido de políticas de devolución, con el fin de evitar los tiempos prolongados al trabajar directamente en archivos Excel de gran tamaño.
+
+        Permite acceder de manera ágil y sencilla a la información, facilitando la consulta de datos sin necesidad de recorrer manualmente hojas extensas o realizar búsquedas complejas.
+
+        Su objetivo es mejorar la eficiencia en el trabajo diario, brindando una forma más rápida, organizada y práctica de encontrar la información necesaria.
+
+        <br><br>
+        <span style="font-size:12px; color:#666;">
+            Desarrollo realizado como apoyo operativo para optimizar el proceso de búsqueda.
+        </span>
+    </p>
+
+</div>
+
+    </div>
+
+    <!-- APLICACIÓN PRINCIPAL -->
+    <div id="mainApp" class="app-container d-none">
+
+        <header class="app-header mb-4">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h2 class="app-title m-0">🏥🩺🏥🧑‍⚕️GESTOR DE CANJES TECNICOS FARMACIA 🏥🩺🏥🧑‍⚕️</h2>
+                    </div>
+                    <div class="col-auto">
+                        <button id="btnVolverInicio" class="btn btn-sm btn-outline-secondary" type="button">
+                            <i class="fas fa-arrow-left"></i> Volver al inicio
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="container-fluid">
+
+            <!-- Info del archivo -->
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <h4 id="labelArchivo" class="fw-bold" style="color: #075ec2;">Archivo cargado:
+                        politicas_devolucion.xlsx</h4>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button id="btnCambiarArchivo" class="btn btn-inkafarma-outline" type="button">
+                        <i class="fas fa-file-excel"></i> Cambiar archivo de políticas
+                    </button>
+                </div>
+            </div>
+
+            <!-- FORMULARIO DE CANJE -->
+            <div class="form-container">
+                <h5 class="mb-3"><i class="fas fa-clipboard-list"></i> Formulario de Canje</h5>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text">📦 Producto</span>
+                            <input type="text" id="inputCodigo" class="form-control" placeholder="Código POSU o EAN">
+                            <button id="btnBuscar" class="btn btn-inkafarma" type="button">Buscar</button>
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <span class="counter-badge" id="itemCounter">🧮 Ítems: 0</span>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">🧾 DESCRIPCIÓN:</label>
+                        <input type="text" id="labelDescripcion" class="form-control readonly-field" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">🏢 LABORATORIO:</label>
+                        <input type="text" id="labelLab" class="form-control readonly-field" readonly>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">✅ PROCEDE POR LIF:</label>
+                        <input type="text" id="labelLif" class="form-control readonly-field" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">📋 ESTADO:</label>
+                        
+                        <input type="text" id="labelEstado" class="form-control readonly-field" readonly>
+                    </div>
+                </div>
+
+                <div id="panelCondicionPolitica" class="mt-3 mb-3" style="display:none;">
+                    <div id="alertCondicion" class="alert alert-info fw-bold shadow-sm" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <span id="labelCondicionPolitica"></span>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <button id="btnToggleLote" class="btn btn-danger w-100" type="button">🔴 Sin información de lote (F2)</button>
+                    </div>
+                </div>
+
+                <!-- Información de Lote y Vida Útil (JSON) -->
+
+                <div id="panelLote" class="row mb-3" style="display:none;">
+                    <div class="col-md-12">
+                        <div class="p-3 border rounded shadow-sm"
+                            style="background-color: #fff9f5; border-color: #fee3d0 !important;">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 style="color: var(--inkafarma-orange);" class="fw-bold mb-0"><i
+                                        class="fas fa-boxes"></i> Información de Lote y Vida Útil</h6>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3 mb-2">
+                                    <p class="mb-1 text-muted small fw-bold">CÓD. POSU GENERAL:</p>
+                                    <p id="labelPosuGeneral" class="mb-2 mb-md-0 fw-bold"
+                                        style="font-size: 0.9rem; color: #1e3a5f;">Esperando búsqueda...</p>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <p class="mb-1 text-muted small fw-bold">PRODUCTO:</p>
+                                    <p id="labelProveedorLote" class="mb-2 mb-md-0" style="font-size: 0.9rem;">Esperando
+                                        búsqueda...</p>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <p class="mb-1 text-muted small fw-bold">TIEMPO DE VIDA ÚTIL:</p>
+                                    <p id="labelTiempoVida" class="mb-2 mb-md-0" style="font-size: 0.9rem;">Esperando
+                                        búsqueda...</p>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <p class="mb-1 text-muted small fw-bold">LECTURA DE LOTE:</p>
+                                    <p id="labelLecturaLote" class="mb-0" style="font-size: 0.9rem;">Esperando
+                                        búsqueda...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                </div>
+
+                <!-- Botón Copiar Ficha del Producto -->
+                <div class="row mb-3">
+                    <div class="col-12 text-center">
+                        <button id="btnCopiarFicha" class="btn btn-primary btn-lg w-100" type="button"
+                            style="background: linear-gradient(45deg, #1e3a5f, #2c5282); border: none; font-weight: bold;">
+                            <i class="fas fa-copy me-2"></i> COPIAR FICHA DEL PRODUCTO (MEDICAMENTO / DERMO / BEBÉS)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label" for="inputFecha">📅 F-V (MM/AAAA):</label>
+                        <input type="text" id="inputFecha" class="form-control" placeholder="MMAA">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" for="inputResponsable">👤 Responsable:</label>
+                        <input type="text" id="inputResponsable" class="form-control"
+                            placeholder="Nombre del responsable">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">🔢 Entero (E):</label>
+                        <input type="number" id="inputEntero" class="form-control" placeholder="0" value="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">🔢 Fracción (F):</label>
+                        <input type="number" id="inputFraccion" class="form-control" placeholder="0" value="0">
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <button id="btnGuardar" class="btn btn-inkafarma" type="button">
+                        <i class="fas fa-save"></i> GUARDAR
+                    </button>
+                </div>
+            </div>
+
+            <!-- FILTROS -->
+            <div class="form-container">
+                <h5 class="mb-3"><i class="fas fa-filter"></i> Filtros rápidos</h5>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 mb-2">
+                        <div class="input-group">
+                            <span class="input-group-text">COD_POSU</span>
+                            <input type="text" id="filtroCodigoPosu" class="form-control"
+                                placeholder="Buscar por código">
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="input-group">
+                            <span class="input-group-text">Estado</span>
+                            <select id="filtroEstado" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="TIENE POLÍTICA">POLÍTICA REGULAR</option>
+                                <option value="NO TIENE POLÍTICA">NO TIENE POLÍTICA</option>
+                                <option value="POLÍTICA EXCEPCIONAL">POLÍTICA EXCEPCIONAL</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="input-group">
+                            <span class="input-group-text">Laboratorio</span>
+                            <input type="text" id="filtroLaboratorio" class="form-control"
+                                placeholder="Buscar por laboratorio">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 mb-2">
+                        <div class="input-group">
+                            <span class="input-group-text">Fecha (MM/AAAA)</span>
+                            <input type="text" id="filtroFecha" class="form-control" placeholder="MMAA">
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="input-group">
+                            <span class="input-group-text">Urgente (MM/AAAA)</span>
+                            <input type="text" id="filtroUrgente" class="form-control" placeholder="MMAA">
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end align-self-end">
+                        <button id="btnAplicarFiltro" class="btn btn-inkafarma me-2" type="button">
+                            <i class="fas fa-search"></i> Aplicar filtros
+                        </button>
+                        <button id="btnLimpiarFiltros" class="btn btn-outline-secondary" type="button">
+                            <i class="fas fa-redo"></i> Limpiar filtros
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLA -->
+            <div class="table-container">
+                <h5 class="mb-3"><i class="fas fa-table"></i> Productos agregados</h5>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <button class="btn btn-danger" id="btnEliminarTodo">
+                            <i class="fas fa-trash-alt"></i> Eliminar todo
+                        </button>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button id="btnExportarPdf" class="btn btn-inkafarma" type="button">
+                            <i class="fas fa-file-pdf"></i> Exportar PDF
+                        </button>
+                        <button id="btnExportarExcel" class="btn btn-inkafarma" type="button">
+                            <i class="fas fa-file-excel"></i> Exportar Excel
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="productosTable" class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>RESPONSABLE</th>
+                                <th>COD_POSU</th>
+                                <th>DESCRIPCION</th>
+                                <th>LABORATORIO</th>
+                                <th>ESTADO</th>
+                                <th>F-V</th>
+                                <th>E</th>
+                                <th>F</th>
+                                <th>URGENTE</th>
+                                <th>ACCIONES</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-center gap-2 my-4">
+                <button id="btnExportarPdf2" class="btn btn-inkafarma" type="button">
+                    <i class="fas fa-file-pdf"></i> Exportar PDF
+                </button>
+                <button id="btnExportarExcel2" class="btn btn-inkafarma" type="button">
+                    <i class="fas fa-file-excel"></i> Exportar Excel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Cargar archivo -->
+    <div class="modal fade" id="fileModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header text-white" style="background-color: #1c8ffa;">
+                    <h5 class="modal-title">Seleccionar archivo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="fileInput" class="form-label">Selecciona tu archivo Excel de políticas de
+                            devolución</label>
+                        <input class="form-control" type="file" id="fileInput" accept=".xlsx,.xls,.xlsb,.ods">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="btnCargarArchivo" class="btn btn-inkafarma">Cargar archivo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Opciones de Exportación PDF -->
+    <div class="modal fade" id="exportModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-file-pdf"></i> Opciones de Exportación PDF</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-grid gap-3">
+
+                        <!-- Opción 1 -->
+                        <button class="btn export-option-btn py-3" id="optPdfExcepcional">
+                            <div class="fw-bold text-start"><i
+                                    class="fas fa-exclamation-triangle text-warning me-2"></i> 1. Política Excepcional
+                            </div>
+                            <small class="text-muted d-block text-start ps-4">Exporta productos con estado "POLÍTICA
+                                EXCEPCIONAL". Ordenado A-Z.</small>
+                        </button>
+
+                        <!-- Opción 2 -->
+                        <button class="btn export-option-btn py-3" id="optPdfNoTiene">
+                            <div class="fw-bold text-start"><i class="fas fa-times-circle text-danger me-2"></i> 2. No
+                                Tiene Política</div>
+                            <small class="text-muted d-block text-start ps-4">Exporta productos sin política. Ordenado
+                                A-Z.</small>
+                        </button>
+
+                        <!-- Opción 3 -->
+                        <div class="border rounded p-3 bg-light">
+                            <div class="fw-bold mb-2"><i class="fas fa-calendar-check text-success me-2"></i> 3. Tiene
+                                Canje (Por Urgente)</div>
+                            <small class="text-muted d-block mb-2">Exporta por fecha URGENTE. Ordenado A-Z.</small>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">Mes/Año</span>
+                                <input type="text" id="inputExportUrgente" class="form-control" placeholder="MM/AAAA"
+                                    maxlength="7">
+                                <button class="btn btn-success" type="button" id="optPdfCanje">Generar</button>
+                            </div>
+                        </div>
+
+                        <!-- Opción 4 -->
+                        <button class="btn export-option-btn py-3" id="optPdfTodo">
+                            <div class="fw-bold text-start"><i class="fas fa-print text-primary me-2"></i> 4. Imprimir
+                                Todo</div>
+                            <small class="text-muted d-block text-start ps-4">Exporta todos los registros. Ordenado
+                                A-Z.</small>
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Confirmar eliminación -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Confirmar eliminación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que quieres eliminar este producto?</p>
+                    <div id="deleteItemDetails">
+                        <p><strong>Código:</strong> <span id="deleteItemCode"></span></p>
+                        <p><strong>Descripción:</strong> <span id="deleteItemDesc"></span></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="btnConfirmDelete" class="btn btn-danger">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts externos -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- Base de Datos Local de Lotes -->
+    <script src="Data_Lectura_Interpretativa_Lote.js"></script>
+
+    <!-- Lógica de la aplicación -->
+    <script>
+        'use strict';
+
+        // ==================== ESTADO GLOBAL ====================
+        const AppState = {
+            productos: [],
+            listaCanjes: [],
+            datosLote: [],
+            itemCounter: 0,
+            dataTable: null,
+            archivoActual: null,
+            productoActual: null,
+            indexSeleccionado: -1,
+            ultimoIndexInsertado: 0
+        };
+
+        // Variables para modales
+        let fileModal = null;
+        let deleteModal = null;
+        let exportModal = null;
+
+        // ==================== UTILIDADES ====================
+
+        function limpiarTexto(texto) {
+            return texto ? texto.toString().trim().toUpperCase() : "";
+        }
+
+        function mostrarAlerta(mensaje, tipo) {
+            const iconos = { success: 'success', error: 'error', warning: 'warning', info: 'info' };
+            Swal.fire({
+                icon: iconos[tipo] || 'info',
+                title: tipo === 'error' ? 'Error' : 'Información',
+                text: mensaje,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+        }
+
+        function calcularUrgente(fechaMmAaaa, estado) {
+            if (!fechaMmAaaa || !/^\d{2}\/\d{4}$/.test(fechaMmAaaa) || !estado) return "";
+
+            try {
+                const [mes, anio] = fechaMmAaaa.split('/');
+                const fecha = new Date(parseInt(anio), parseInt(mes) - 1, 1);
+
+                const mesesRestar = {
+                    'POLÍTICA REGULAR': 4,
+                    'NO TIENE POLÍTICA': 2,
+                    'POLÍTICA EXCEPCIONAL': 1
+                };
+
+                const meses = mesesRestar[estado.trim().toUpperCase()] || 0;
+                if (meses === 0) return "";
+
+                fecha.setMonth(fecha.getMonth() - meses);
+                const mesUrgente = (fecha.getMonth() + 1).toString().padStart(2, '0');
+                const anioUrgente = fecha.getFullYear();
+
+                return `${mesUrgente}/${anioUrgente}`;
+            } catch (error) {
+                console.error("Error calculando fecha urgente:", error);
+                return "";
+            }
+        }
+
+        function actualizarCampo(id, valor) {
+            const campo = document.getElementById(id);
+            if (!campo) return;
+
+            campo.value = valor || '';
+            campo.classList.toggle('campo-llenado', valor && valor.trim() !== '');
+        }
+
+        function formatoMmAaaa(input) {
+            const valor = input.value;
+            if (valor.length === 4) {
+                const mes = valor.substring(0, 2);
+                const anio = valor.substring(2, 4);
+
+                if (parseInt(mes, 10) > 12 || parseInt(mes, 10) === 0) {
+                    mostrarAlerta('El mes ingresado es inválido (01-12).', 'warning');
+                } else {
+                    input.value = `${mes}/20${anio}`;
+                }
+            }
+        }
+
+        // ==================== ALMACENAMIENTO LOCAL ====================
+
+        function guardarDatosLocales() {
+            try {
+                localStorage.setItem('canjesGuardados', JSON.stringify(AppState.listaCanjes));
+                localStorage.setItem('itemCounter', AppState.itemCounter);
+                localStorage.setItem('ultimoArchivo', AppState.archivoActual);
+            } catch (error) {
+                console.error('Error guardando datos en localStorage:', error);
+            }
+        }
+
+        function cargarDatosLocales() {
+            try {
+                const canjesGuardados = localStorage.getItem('canjesGuardados');
+                const counterGuardado = localStorage.getItem('itemCounter');
+                const ultimoArchivo = localStorage.getItem('ultimoArchivo');
+
+                if (canjesGuardados) AppState.listaCanjes = JSON.parse(canjesGuardados);
+                if (counterGuardado) AppState.itemCounter = parseInt(counterGuardado);
+                if (ultimoArchivo) {
+                    AppState.archivoActual = ultimoArchivo;
+                    document.getElementById('labelArchivo').textContent = `Archivo cargado: ${ultimoArchivo}`;
+                }
+
+                if (AppState.itemCounter > 0) {
+                    document.getElementById('itemCounter').textContent = `🧮 Ítems: ${AppState.itemCounter}`;
+                }
+            } catch (error) {
+                console.error('Error cargando datos desde localStorage:', error);
+            }
+        }
+
+        function verificarUltimoArchivo() {
+            const ultimoArchivo = localStorage.getItem('ultimoArchivo');
+            if (ultimoArchivo) {
+                const btnUltimoArchivo = document.getElementById('btnUltimoArchivo');
+                btnUltimoArchivo.textContent = `Usar último archivo: ${ultimoArchivo}`;
+                btnUltimoArchivo.classList.remove('d-none');
+                document.getElementById('labelArchivo').textContent = `Archivo cargado: ${ultimoArchivo}`;
+                return true;
+            }
+            return false;
+        }
+
+        // ==================== PRODUCTOS ====================
+
+        function buscarProducto() {
+            const codigo = limpiarTexto(document.getElementById('inputCodigo').value);
+
+            if (!codigo || !AppState.productos || AppState.productos.length === 0) {
+                mostrarAlerta('Ingresa un código válido y asegúrate de haber cargado un archivo de políticas', 'warning');
+                return;
+            }
+
+            const producto = AppState.productos.find(p =>
+                limpiarTexto(p['COD POSU']) === codigo || limpiarTexto(p['EAN']) === codigo
+            );
+
+            if (!producto) {
+                mostrarAlerta(`No se encontró el producto con código: ${codigo}`, 'error');
+                limpiarCamposProducto();
+                return;
+            }
+
+            actualizarCampo('labelDescripcion', producto['DESCRIPCION']);
+            actualizarCampo('labelLab', producto['LABORATORIO']);
+            actualizarCampo('labelLif', producto['LIF Condicional']);
+            actualizarCampo('labelEstado', producto['POLITICA']);
+
+            // Verificar similitud en el JSON de lotes usando el código POSU General
+            const posuGeneral = limpiarTexto(producto['COD POSU']);
+
+            // Elementos de la UI
+            const labelPosu = document.getElementById('labelPosuGeneral');
+            const labelProveedor = document.getElementById('labelProveedorLote');
+            const labelLote = document.getElementById('labelLecturaLote');
+            const labelVida = document.getElementById('labelTiempoVida');
+
+            // Mostramos explícitamente el código POSU General que se está usando
+            if (labelPosu) labelPosu.textContent = posuGeneral;
+
+            const productoLote = AppState.datosLote.find(p => {
+                if (!p['COD FARMAVENTA']) return false;
+                const codJson = p['COD FARMAVENTA'].toString().trim().toUpperCase();
+                return codJson === posuGeneral || parseInt(codJson, 10) === parseInt(posuGeneral, 10);
+            });
+
+            if (productoLote) {
+                actualizarEstadoBotonLote(true);
+                labelProveedor.textContent = productoLote['PRODUCTO'] || 'Dato no especificado';
+                labelProveedor.className = 'mb-2 mb-md-0 fw-bold text-dark';
+
+                labelVida.textContent = productoLote['TIEMPO DE VIDA UTIL'] || 'Dato no especificado';
+                labelVida.className = 'mb-2 mb-md-0 fw-bold text-dark';
+
+                labelLote.textContent = productoLote['LECTURA DE LOTE'] || 'Dato no especificado';
+                labelLote.className = 'mb-0 fw-bold text-dark';
+            } else {
+                actualizarEstadoBotonLote(false);
+                labelProveedor.textContent = 'Datos no encontrados';
+                labelProveedor.className = 'mb-2 mb-md-0 text-danger fst-italic';
+
+                labelVida.textContent = 'Datos no encontrados';
+                labelVida.className = 'mb-2 mb-md-0 text-danger fst-italic';
+
+                labelLote.textContent = 'Datos no encontrados';
+                labelLote.className = 'mb-0 text-danger fst-italic';
+            }
+
+            
+const condicionLabel = document.getElementById('labelCondicionPolitica');
+const condicionPanel = document.getElementById('panelCondicionPolitica');
+const alerta = document.getElementById('alertCondicion');
+
+const politica = (producto['POLITICA'] || '').toUpperCase();
+
+if (condicionLabel && condicionPanel && alerta) {
+
+    let mensaje = '';
+
+    if (politica.includes('REGULAR') || politica.includes('TIENE POLÍTICA')) {
+        mensaje = '🟢 Lima/Provincia: 4 meses | Jorsa: 5 meses antes de la F.V';
+        alerta.className = 'alert alert-success fw-bold shadow-sm';
+    }
+    else if (politica.includes('NO TIENE')) {
+        mensaje = '🔴 Descargar como expirado sin canje 1 mes antes de la F.V';
+        alerta.className = 'alert alert-danger fw-bold shadow-sm';
+    }
+    else if (politica.includes('EXCEPCIONAL')) {
+        mensaje = '🟡 Lima/Provincia: 1 mes | Jorsa: 2 meses antes de la F.V';
+        alerta.className = 'alert alert-warning fw-bold shadow-sm';
+    }
+
+    condicionLabel.textContent = mensaje;
+    condicionPanel.style.display = mensaje ? 'block' : 'none';
+}
+AppState.productoActual = producto;
+            document.getElementById('inputFecha').focus();
+        }
+
+        
+        function actualizarEstadoBotonLote(tieneDatos) {
+            const btn = document.getElementById('btnToggleLote');
+            if (!btn) return;
+            if (tieneDatos) {
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-success');
+                btn.innerHTML = '🟢 Ver información de Lote y Vida Útil (F2)';
+            } else {
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-danger');
+                btn.innerHTML = '🔴 Sin información de lote (F2)';
+            }
+        }
+
+        function togglePanelLote() {
+            const panel = document.getElementById('panelLote');
+            const btn = document.getElementById('btnToggleLote');
+            if (!panel || !btn) return;
+            if (btn.classList.contains('btn-danger')) {
+                mostrarAlerta('No hay información de lote disponible.', 'warning');
+                return;
+            }
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+
+function limpiarCamposProducto() {
+            document.getElementById('inputCodigo').value = '';
+            actualizarCampo('labelDescripcion', '');
+            actualizarCampo('labelLab', '');
+            actualizarCampo('labelLif', '');
+            actualizarCampo('labelEstado', '');
+
+            const labelPosu = document.getElementById('labelPosuGeneral');
+            const labelProveedor = document.getElementById('labelProveedorLote');
+            const labelLote = document.getElementById('labelLecturaLote');
+            const labelVida = document.getElementById('labelTiempoVida');
+
+            if (labelPosu) {
+                labelPosu.textContent = 'Esperando búsqueda...';
+            }
+            if (labelProveedor) {
+                labelProveedor.textContent = 'Esperando búsqueda...';
+                labelProveedor.className = 'mb-2 mb-md-0';
+            }
+            if (labelLote) {
+                labelLote.textContent = 'Esperando búsqueda...';
+                labelLote.className = 'mb-0';
+            }
+            actualizarEstadoBotonLote(false);
+            document.getElementById('panelLote').style.display='none';
+            if (labelVida) {
+                labelVida.textContent = 'Esperando búsqueda...';
+                labelVida.className = 'mb-2 mb-md-0';
+            }
+
+            
+const condicionLabel2 = document.getElementById('labelCondicionPolitica');
+const condicionPanel2 = document.getElementById('panelCondicionPolitica');
+if(condicionLabel2) condicionLabel2.textContent='';
+if(condicionPanel2) condicionPanel2.style.display='none';
+AppState.productoActual = null;
+        }
+
+        function limpiarFormulario() {
+            document.getElementById('inputCodigo').value = '';
+            document.getElementById('inputFecha').value = '';
+            document.getElementById('inputEntero').value = '0';
+            document.getElementById('inputFraccion').value = '0';
+            limpiarCamposProducto();
+            AppState.indexSeleccionado = -1;
+            document.getElementById('inputCodigo').focus();
+        }
+
+        function guardarProducto() {
+            if (!AppState.productoActual) {
+                mostrarAlerta('Primero busca un producto', 'warning');
+                return;
+            }
+
+            const responsable = document.getElementById('inputResponsable').value.trim();
+            const fechaVenc = document.getElementById('inputFecha').value.trim();
+            const entero = document.getElementById('inputEntero').value.trim();
+            const fraccion = document.getElementById('inputFraccion').value.trim();
+
+            if (!responsable || !fechaVenc) {
+                mostrarAlerta('Los campos "Responsable" y "F-V" son obligatorios.', 'warning');
+                return;
+            }
+
+            if (!/^\d{2}\/\d{4}$/.test(fechaVenc)) {
+                mostrarAlerta('El formato de fecha es incorrecto. Debe ser MM/AAAA.', 'warning');
+                return;
+            }
+
+            const enteroNum = parseInt(entero || '0', 10);
+            const fraccionNum = parseInt(fraccion || '0', 10);
+
+            if (enteroNum === 0 && fraccionNum === 0) {
+                mostrarAlerta('No puedes guardar E = 0 y F = 0 al mismo tiempo. Debe existir stock entero o fracción.', 'error');
+                return;
+            }
+
+            if (enteroNum < 0 || fraccionNum < 0) {
+                mostrarAlerta('No se permiten valores negativos en Entero o Fracción.', 'warning');
+                return;
+            }
+
+            const estado = AppState.productoActual['POLITICA'] || '';
+            const urgente = calcularUrgente(fechaVenc, estado);
+
+            const nuevoCanje = {
+                RESPONSABLE: responsable,
+                'COD POSU': AppState.productoActual['COD POSU'],
+                'DESCRIPCION': AppState.productoActual['DESCRIPCION'],
+                'LABORATORIO': AppState.productoActual['LABORATORIO'],
+                'ESTADO': estado,
+                'F-V': fechaVenc,
+                'E': entero || '0',
+                'F': fraccion || '0',
+                'URGENTE': urgente
+            };
+
+            if (AppState.indexSeleccionado >= 0) {
+                AppState.listaCanjes[AppState.indexSeleccionado] = nuevoCanje;
+                AppState.indexSeleccionado = -1;
+                mostrarAlerta('Producto actualizado correctamente', 'success');
+            } else {
+                AppState.listaCanjes.unshift(nuevoCanje);
+                AppState.ultimoIndexInsertado = 0;
+                AppState.itemCounter++;
+                mostrarAlerta('Producto guardado correctamente', 'success');
+            }
+
+            document.getElementById('itemCounter').textContent = `🧮 Ítems: ${AppState.itemCounter}`;
+            actualizarTabla();
+            limpiarFormulario();
+
+            setTimeout(() => {
+                const primeraFila = document.querySelector('#productosTable tbody tr');
+
+                if (primeraFila) {
+                    primeraFila.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+
+                    primeraFila.classList.add('fila-reciente');
+
+                    setTimeout(() => {
+                        primeraFila.classList.remove('fila-reciente');
+                    }, 3000);
+                }
+            }, 350);
+
+            guardarDatosLocales();
+        }
+
+        // ==================== TABLA ====================
+
+        function actualizarTabla() {
+            if (AppState.dataTable) {
+                AppState.dataTable.destroy();
+            }
+
+            const tbody = document.querySelector('#productosTable tbody');
+            tbody.innerHTML = '';
+
+            AppState.listaCanjes.forEach((canje, index) => {
+                const estado = canje.ESTADO || '';
+                const badgeClass = {
+                    'TIENE POLÍTICA': 'badge-tiene',
+                    'NO TIENE POLÍTICA': 'badge-no-tiene',
+                    'POLÍTICA EXCEPCIONAL': 'badge-excepcional'
+                }[estado] || '';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                <td>${canje.RESPONSABLE || ''}</td>
+                <td>${canje['COD POSU'] || ''}</td>
+                <td>${canje['DESCRIPCION'] || ''}</td>
+                <td>${canje['LABORATORIO'] || ''}</td>
+                <td><span class="badge-policy ${badgeClass}">${estado}</span></td>
+                <td>${canje['F-V'] || ''}</td>
+                <td>${canje.E || ''}</td>
+                <td>${canje.F || ''}</td>
+                <td>${canje.URGENTE || ''}</td>
+                <td class="table-actions">
+                    <button class="btn btn-sm btn-outline-primary btn-editar" data-index="${index}" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger btn-eliminar" data-index="${index}" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+                tbody.appendChild(tr);
+            });
+
+            AppState.dataTable = new DataTable('#productosTable', {
+                language: { url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
+                responsive: true,
+                order: []
+            });
+
+            document.querySelectorAll('.btn-editar').forEach(btn => {
+                btn.addEventListener('click', () => editarFila(parseInt(btn.dataset.index)));
+            });
+            document.querySelectorAll('.btn-eliminar').forEach(btn => {
+                btn.addEventListener('click', () => confirmarEliminar(parseInt(btn.dataset.index)));
+            });
+        }
+
+        function editarFila(index) {
+            const canje = AppState.listaCanjes[index];
+            AppState.indexSeleccionado = index;
+
+            document.getElementById('inputCodigo').value = canje['COD POSU'];
+            buscarProducto();
+
+            document.getElementById('inputResponsable').value = canje.RESPONSABLE || '';
+            document.getElementById('inputFecha').value = canje['F-V'] || '';
+            document.getElementById('inputEntero').value = canje.E || '0';
+            document.getElementById('inputFraccion').value = canje.F || '0';
+
+            document.querySelector('.form-container').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function confirmarEliminar(index) {
+            const canje = AppState.listaCanjes[index];
+            document.getElementById('deleteItemCode').textContent = canje['COD POSU'];
+            document.getElementById('deleteItemDesc').textContent = canje['DESCRIPCION'];
+            AppState.indexSeleccionado = index;
+            deleteModal.show();
+        }
+
+        function eliminarFila() {
+            if (AppState.indexSeleccionado < 0) return;
+
+            AppState.listaCanjes.splice(AppState.indexSeleccionado, 1);
+            AppState.indexSeleccionado = -1;
+            AppState.itemCounter--;
+
+            document.getElementById('itemCounter').textContent = `🧮 Ítems: ${AppState.itemCounter}`;
+            actualizarTabla();
+            deleteModal.hide();
+            guardarDatosLocales();
+            mostrarAlerta('Producto eliminado correctamente', 'success');
+        }
+
+        function eliminarTodo() {
+            if (AppState.listaCanjes.length === 0) {
+                mostrarAlerta('La tabla ya está vacía.', 'info');
+                return;
+            }
+
+            Swal.fire({
+                title: '¿Eliminar todos los productos?',
+                text: 'Esta acción eliminará todos los productos agregados.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar todo',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#009739'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    AppState.listaCanjes = [];
+                    AppState.itemCounter = 0;
+                    guardarDatosLocales();
+                    document.getElementById('itemCounter').textContent = `🧮 Ítems: 0`;
+                    actualizarTabla();
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Eliminado',
+                        text: 'Todos los productos han sido eliminados.',
+                        confirmButtonColor: '#009739'
+                    });
+                }
+            });
+        }
+
+        // ==================== FILTROS ====================
+
+        function aplicarFiltros() {
+            if (!AppState.dataTable) return;
+
+            const filtroEstado = document.getElementById('filtroEstado').value;
+
+            AppState.dataTable
+                .column(1).search(limpiarTexto(document.getElementById('filtroCodigoPosu').value))
+                .column(3).search(limpiarTexto(document.getElementById('filtroLaboratorio').value))
+                .column(4).search(filtroEstado ? '^' + filtroEstado + '$' : '', true, false)
+                .column(5).search(document.getElementById('filtroFecha').value)
+                .column(8).search(document.getElementById('filtroUrgente').value)
+                .draw();
+        }
+
+        function limpiarFiltros() {
+            if (!AppState.dataTable) return;
+
+            document.getElementById('filtroCodigoPosu').value = '';
+            document.getElementById('filtroEstado').value = '';
+            document.getElementById('filtroLaboratorio').value = '';
+            document.getElementById('filtroFecha').value = '';
+            document.getElementById('filtroUrgente').value = '';
+
+            AppState.dataTable.columns().search('').draw();
+        }
+
+        // ==================== EXPORTACIÓN PDF ====================
+
+        function generarPDF(data, titulo, ordenarAZ = true) {
+            if (!data || data.length === 0) {
+                mostrarAlerta('No hay datos para generar el reporte PDF.', 'warning');
+                return;
+            }
+
+            let dataProcesada = [...data];
+
+            if (ordenarAZ) {
+                dataProcesada.sort((a, b) => {
+                    const labA = (a['LABORATORIO'] || '').toString().toUpperCase();
+                    const labB = (b['LABORATORIO'] || '').toString().toUpperCase();
+                    return labA.localeCompare(labB, 'es');
+                });
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape');
+            const fechaHoy = new Date().toISOString().slice(0, 10);
+
+            // ==================== ENCABEZADO ====================
+            doc.setFontSize(14);
+            doc.setTextColor(0, 0, 0);
+            doc.setFont(undefined, 'bold');
+            doc.text('GESTOR DE CANJES - REPORTE', 14, 15);
+
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Tipo: ${titulo}`, 14, 22);
+            doc.text(`Fecha: ${new Date().toLocaleString()}`, 14, 26);
+            doc.text(`Ítems: ${dataProcesada.length}`, 14, 30);
+
+            // ==================== COLUMNAS ====================
+            const columns = [
+                { header: 'RESP.', dataKey: 'RESPONSABLE' },
+                { header: 'COD_POSU', dataKey: 'COD POSU' },
+                { header: 'DESCRIPCION', dataKey: 'DESCRIPCION' },
+                { header: 'LABORATORIO', dataKey: 'LABORATORIO' },
+                { header: 'ESTADO', dataKey: 'ESTADO' },
+                { header: 'F-V', dataKey: 'F-V' },
+                { header: 'E', dataKey: 'E' },
+                { header: 'F', dataKey: 'F' },
+                { header: 'URGENTE', dataKey: 'URGENTE' }
+            ];
+
+            // ==================== ANCHO DE COLUMNAS ====================
+            const columnStyles = {
+                0: { cellWidth: 25 },
+                1: { cellWidth: 25 },
+                2: { cellWidth: 60 },
+                3: { cellWidth: 40 },
+                4: { cellWidth: 35 },
+                5: { cellWidth: 20 },
+                6: { cellWidth: 10 },
+                7: { cellWidth: 10 },
+                8: { cellWidth: 25 }
+            };
+
+            const totalWidth = Object.values(columnStyles).reduce((sum, col) => sum + col.cellWidth, 0);
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const marginLeft = Math.max(5, (pageWidth - totalWidth) / 2);
+
+            // ==================== TABLA ====================
+            doc.autoTable({
+                startY: 34,
+                columns: columns,
+                body: dataProcesada,
+                theme: 'grid',
+
+                headStyles: {
+                    fillColor: [255, 255, 255],
+                    textColor: [0, 0, 0],
+                    fontStyle: 'bold',
+                    fontSize: 9,
+                    halign: 'center',
+                    valign: 'middle',
+                    lineWidth: 0.7,
+                    lineColor: [0, 0, 0]
+                },
+
+                styles: {
+                    fontSize: 8.5,
+                    cellPadding: 2,
+                    textColor: [0, 0, 0],
+                    fillColor: [255, 255, 255],
+                    lineWidth: 0.4,
+                    lineColor: [0, 0, 0],
+                    valign: 'middle'
+                },
+
+                bodyStyles: {
+                    lineWidth: 0.3
+                },
+
+                alternateRowStyles: {
+                    fillColor: [255, 255, 255]
+                },
+
+                columnStyles: {
+                    0: { halign: 'center' },
+                    1: { halign: 'center' },
+                    2: { halign: 'left' },
+                    3: { halign: 'left' },
+                    4: { halign: 'center' },
+                    5: { halign: 'center' },
+                    6: { halign: 'center' },
+                    7: { halign: 'center' },
+                    8: { halign: 'center' }
+                },
+
+                didDrawCell: function (data) {
+                    if (data.section === 'head') {
+                        const { doc } = data;
+                        doc.setLineWidth(1);
+                        doc.setDrawColor(0, 0, 0);
+                        doc.line(
+                            data.cell.x,
+                            data.cell.y,
+                            data.cell.x + data.cell.width,
+                            data.cell.y
+                        );
+                    }
+                },
+
+                margin: { top: 5, left: marginLeft, right: marginLeft, bottom: 5 },
+                tableWidth: 'wrap'
+            });
+
+            // ==================== EXPORTAR ====================
+            doc.save(`Reporte_${titulo.replace(/ /g, '_')}_${fechaHoy}.pdf`);
+            exportModal.hide();
+        }
+
+        // ==================== FUNCIONES DE EXPORTACIÓN ====================
+
+        function exportarPdfExcepcional() {
+            const datos = AppState.listaCanjes.filter(item =>
+                limpiarTexto(item.ESTADO) === 'POLÍTICA EXCEPCIONAL'
+            );
+            generarPDF(datos, 'Política Excepcional', true);
+        }
+
+        function exportarPdfNoTiene() {
+            const datos = AppState.listaCanjes.filter(item =>
+                limpiarTexto(item.ESTADO) === 'NO TIENE POLÍTICA'
+            );
+            generarPDF(datos, 'No Tiene Política', true);
+        }
+
+        function exportarPdfCanje() {
+            const input = document.getElementById('inputExportUrgente').value.trim();
+
+            if (!/^\d{2}\/\d{4}$/.test(input)) {
+                mostrarAlerta('Ingrese una fecha válida (MM/AAAA). Use el formato indicado.', 'warning');
+                return;
+            }
+
+            const datos = AppState.listaCanjes.filter(item =>
+                (item.URGENTE || '').trim() === input
+            );
+
+            if (datos.length === 0) {
+                mostrarAlerta(`No se encontraron ítems con fecha URGENTE ${input}.`, 'info');
+                return;
+            }
+
+            generarPDF(datos, `Canjes Urgentes ${input}`, true);
+        }
+
+        function exportarPdfTodo() {
+            generarPDF(AppState.listaCanjes, 'Listado Completo', true);
+        }
+
+        // ==================== EXPORTACIÓN EXCEL ====================
+
+        function exportarExcel() {
+            let bodyData = AppState.listaCanjes;
+
+            if (bodyData.length === 0) {
+                mostrarAlerta('No hay datos para exportar.', 'warning');
+                return;
+            }
+
+            bodyData.sort((a, b) => {
+                const labA = (a['LABORATORIO'] || '').toString().toUpperCase();
+                const labB = (b['LABORATORIO'] || '').toString().toUpperCase();
+                return labA.localeCompare(labB, 'es');
+            });
+
+            const fechaHoy = new Date().toISOString().slice(0, 10);
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(bodyData);
+
+            XLSX.utils.book_append_sheet(wb, ws, "Canjes");
+            XLSX.writeFile(wb, `Reporte_Canjes_${fechaHoy}.xlsx`);
+        }
+
+        // ==================== ARCHIVOS ====================
+
+        function procesarArchivoExcel(file) {
+            if (!file) {
+                mostrarAlerta('No se seleccionó ningún archivo', 'warning');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Cargando archivo...',
+                text: 'Esto puede tardar unos segundos',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                setTimeout(() => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+
+                        const posiblesNombres = ['DETALLE_POR_SKU', 'DETALLE POR SKU', 'Hoja1', 'Sheet1'];
+                        let hojaValida = posiblesNombres.find(n => workbook.SheetNames.includes(n)) || workbook.SheetNames[0];
+
+                        if (!hojaValida) {
+                            throw new Error('No se encontró ninguna hoja válida en el archivo');
+                        }
+
+                        const worksheet = workbook.Sheets[hojaValida];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                        if (!jsonData || jsonData.length === 0) {
+                            throw new Error(`No se encontraron datos en la hoja "${hojaValida}"`);
+                        }
+
+                        AppState.productos = jsonData.map(row => ({
+                            'EAN': limpiarTexto(row['EAN']),
+                            'COD SAP': limpiarTexto(row['COD SAP']),
+                            'COD POSU': limpiarTexto(row['COD POSU']),
+                            'DESCRIPCION': row['DESCRIPCION'],
+                            'COD PROV': limpiarTexto(row['COD PROV']),
+                            'PROVEEDOR': row['PROVEEDOR'],
+                            'COD LAB': limpiarTexto(row['COD LAB']),
+                            'LABORATORIO': row['LABORATORIO'],
+                            'POLITICA': row['POLITICA'],
+                            'CAMBIO_POLITICA': row['CAMBIO_POLITICA'],
+                            'Condición para Canje Entero': row['Condición para Canje Entero'],
+                            'LIF Condicional': row['LIF Condicional'],
+                            'Condición para LIF': row['Condición para LIF'],
+                            'Observación': row['Observación']
+                        }));
+
+                        AppState.archivoActual = file.name;
+
+                        const btnUltimoArchivo = document.getElementById('btnUltimoArchivo');
+                        btnUltimoArchivo.textContent = `Usar último archivo: ${AppState.archivoActual}`;
+                        btnUltimoArchivo.classList.remove('d-none');
+                        document.getElementById('labelArchivo').textContent = `Archivo cargado: ${file.name}`;
+                        localStorage.setItem('ultimoArchivo', file.name);
+
+                        fileModal.hide();
+                        document.getElementById('welcomeScreen').classList.add('d-none');
+                        document.getElementById('mainApp').classList.remove('d-none');
+                        Swal.close();
+                        mostrarAlerta('Archivo cargado correctamente', 'success');
+
+                    } catch (error) {
+                        console.error('Error procesando archivo:', error);
+                        Swal.close();
+                        mostrarAlerta(`Error al procesar el archivo: ${error.message}`, 'error');
+                    }
+                }, 100);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // ==================== INICIALIZACIÓN ====================
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Carga Automática de la BD de Lotes desde el archivo JS (bypass CORS offline local)
+            if (window.datosLoteGlobal) {
+                AppState.datosLote = window.datosLoteGlobal;
+            } else {
+                console.warn("Base de datos de lotes no encontrada automáticamente. Comprueba el archivo .js");
+            }
+
+            fileModal = new bootstrap.Modal(document.getElementById('fileModal'), {
+                backdrop: 'static',
+                keyboard: false
+            });
+
+            deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+
+            exportModal = new bootstrap.Modal(document.getElementById('exportModal'));
+
+            document.getElementById('fileModal').addEventListener('hide.bs.modal', function (e) {
+                const fileInput = document.getElementById('fileInput');
+                if (!fileInput.files.length) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Archivo requerido',
+                        text: 'Debes seleccionar tu archivo Excel para continuar.',
+                        confirmButtonColor: '#009739'
+                    });
+                }
+            });
+
+            document.getElementById('btnToggleLote')?.addEventListener('click', togglePanelLote);
+
+            document.addEventListener('keydown', function(e){ if(e.key==='F2'){ e.preventDefault(); togglePanelLote(); }});
+
+            // === NAVEGACIÓN ===
+
+            document.getElementById('btnNuevoArchivo').addEventListener('click', function () {
+                fileModal.show();
+            });
+
+            document.getElementById('btnUltimoArchivo').addEventListener('click', function () {
+                cargarDatosLocales();
+                actualizarTabla();
+                document.getElementById('welcomeScreen').classList.add('d-none');
+                document.getElementById('mainApp').classList.remove('d-none');
+            });
+
+            document.getElementById('btnVolverInicio').addEventListener('click', function () {
+                Swal.fire({
+                    title: '¿Deseas volver al inicio?',
+                    text: 'Se perderán los cambios no guardados',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, volver',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#009739',
+                    cancelButtonColor: '#d33'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById('welcomeScreen').classList.remove('d-none');
+                        document.getElementById('mainApp').classList.add('d-none');
+                        limpiarFormulario();
+                        actualizarTabla();
+                    }
+                });
+            });
+
+            document.getElementById('btnCambiarArchivo').addEventListener('click', function () {
+                fileModal.show();
+            });
+
+            // === BÚSQUEDA Y GUARDADO ===
+
+            document.getElementById('btnBuscar').addEventListener('click', buscarProducto);
+
+            document.getElementById('inputCodigo').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    buscarProducto();
+                    e.preventDefault();
+                }
+            });
+
+            document.getElementById('btnGuardar').addEventListener('click', guardarProducto);
+
+            document.getElementById('btnCopiarFicha').addEventListener('click', copiarFichaMedicamento);
+
+            // === COPIAR FICHA DEL MEDICAMENTO ===
+
+            async function copiarFichaMedicamento() {
+                const descripcion = document.getElementById('labelDescripcion').value.trim();
+                const laboratorio = document.getElementById('labelLab').value.trim();
+
+                if (!descripcion || !laboratorio) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: '⚠️ Faltan datos',
+                        text: 'Primero busca un producto para obtener la descripción y laboratorio.',
+                        confirmButtonColor: '#009739'
+                    });
+                    return;
+                }
+
+                // Prompt profesional universal para farmacia (medicamentos + productos)
+                const promptFarmaceutico = `Eres un PROFESIONAL FARMACÉUTICO DEL PERÚ, con formación técnica, científica y experiencia en farmacia comunitaria y hospitalaria.
+
+Tu función es EDUCAR y ORIENTAR sobre productos farmacéuticos en general, incluyendo:
+
+• Medicamentos (éticos y OTC)
+• Productos dermatológicos
+• Productos de higiene personal
+• Fórmulas infantiles y nutricionales
+• Pañales y productos para bebés
+• Suplementos y vitaminas
+• Dispositivos médicos simples
+
+Te basas en:
+
+• Vademécums
+• Fichas técnicas
+• Práctica farmacéutica en Perú y Latinoamérica
+
+NO realizas diagnóstico.
+NO prescribes tratamientos personalizados.
+NO reemplazas la evaluación médica.
+NO fomentas la automedicación irresponsable.
+
+Tu enfoque es el uso seguro, racional e informado del producto.
+
+═══════════════════════════════════════════════════════════════
+REGLA CLAVE (MUY IMPORTANTE)
+═══════════════════════════════════════════════════════════════
+
+Antes de responder, identifica el tipo de producto:
+
+1. Medicamento → usar FORMATO FARMACOLÓGICO COMPLETO
+2. Producto no farmacológico → usar FORMATO ADAPTADO
+
+═══════════════════════════════════════════════════════════════
+FORMATO 1: MEDICAMENTOS
+═══════════════════════════════════════════════════════════════
+
+MEDICAMENTO:
+(Nombre comercial y principio(s) activo(s))
+
+GRUPO FARMACOLÓGICO:
+(Clasificación farmacológica)
+
+¿PARA QUÉ SIRVE?
+(Indicación terapéutica general, en lenguaje educativo)
+
+DOSIFICACIÓN ORIENTATIVA (USO CIENTÍFICO):
+- Adultos:
+  • Dosis habitual
+  • Frecuencia general
+  • Dosis máxima diaria
+  • Límite de uso continuo (días o semanas)
+
+- Adulto mayor:
+  • Dosis orientativa
+  • Frecuencia recomendada
+  • Dosis máxima reducida si aplica
+  • Advertencia sobre uso prolongado
+
+- Adolescentes:
+  • Uso permitido o no
+  • Ajuste general por peso si corresponde
+
+- Niños:
+  • Dosis por peso (mg/kg)
+  • Frecuencia
+  • Dosis máxima diaria
+  • Límite de días de uso
+
+- Lactantes:
+  • Indicar claramente si está permitido o no
+  • Uso solo bajo indicación médica
+
+⚠️ ADVERTENCIA DE DOSIFICACIÓN:
+- Indicar claramente qué ocurre si se supera la dosis máxima diaria.
+- Advertir que el uso prolongado (más de X días) aumenta riesgos.
+- Señalar que NO se deben acortar los intervalos entre dosis.
+- Indicar que NO se deben combinar productos con el mismo principio activo.
+
+REACCIONES ADVERSAS MÁS FRECUENTES:
+(Listar las más relevantes y clínicamente importantes)
+
+CONTRAINDICACIONES:
+(Casos en los que NO debe usarse el medicamento)
+
+USO EN GRUPOS ESPECIALES:
+- Gestantes:
+- Lactancia:
+- Enfermedad renal:
+- Enfermedad hepática:
+
+ALÉRGICOS Y GRUPOS DE RIESGO:
+- Asmáticos:
+- Alérgicos a AINEs / aspirina (si aplica):
+- Otros grupos relevantes:
+
+INTERACCIONES CON ALIMENTOS Y SUSTANCIAS:
+- Alimentos que afecten la absorción
+- Alcohol
+- Minerales o suplementos relevantes
+
+RECOMENDACIONES FARMACÉUTICAS GENERALES:
+- Consejos de uso responsable
+- Señales de alerta para suspender y consultar
+- Educación para prevenir errores de dosificación
+
+AVISO OBLIGATORIO:
+"Esta información es solo para fines educativos y no reemplaza la evaluación de un profesional de salud".
+
+═══════════════════════════════════════════════════════════════
+FORMATO 2: PRODUCTOS DE FARMACIA (NO MEDICAMENTOS)
+═══════════════════════════════════════════════════════════════
+
+PRODUCTO:
+(Nombre comercial + tipo)
+
+TIPO DE PRODUCTO:
+(Ejemplo: pañal, shampoo, protector solar, crema, fórmula infantil, etc.)
+
+¿QUÉ CONTIENE?
+• Principales componentes o materiales
+• Ingredientes activos relevantes (si aplica)
+• Tecnología (ej: hipoalergénico, sin sulfatos, etc.)
+
+¿PARA QUÉ SIRVE?
+• Función principal
+• Beneficios reales (sin marketing exagerado)
+
+MODO DE USO (ORIENTATIVO):
+• Cantidad recomendada
+• Frecuencia de uso
+• Forma correcta de aplicación
+
+ESPECIFICACIONES SEGÚN USO:
+
+👶 SI ES PAÑAL:
+• Rango de peso (kg)
+• Edad referencial
+• Tipo (RN, M, G, etc.)
+• Recomendaciones de cambio
+
+🧴 SI ES SHAMPOO / DERMOCOSMÉTICO:
+• Tipo de piel/cabello
+• Frecuencia de uso
+• Si es uso diario o no
+
+🍼 SI ES FÓRMULA O NUTRICIONAL:
+• Edad recomendada
+• Cantidad orientativa
+• Advertencias nutricionales
+
+⚠️ ADVERTENCIAS:
+• Riesgos por mal uso
+• Uso inadecuado o excesivo
+• Reacciones posibles
+
+REACCIONES O PROBLEMAS POSIBLES:
+• Irritación
+• Alergias
+• Problemas comunes según tipo
+
+CONTRAINDICACIONES:
+• Cuándo NO usar el producto
+
+USO EN GRUPOS ESPECIALES:
+• Bebés
+• Gestantes
+• Piel sensible
+• Adulto mayor (si aplica)
+
+INTERACCIONES:
+(Solo si aplica)
+• Con otros productos
+• Con medicamentos
+• Con factores externos (sol, humedad, etc.)
+
+RECOMENDACIONES FARMACÉUTICAS:
+• Consejos prácticos reales de farmacia
+• Cómo elegir correctamente
+• Señales de alerta
+
+AVISO OBLIGATORIO:
+"Esta información es solo para fines educativos y no reemplaza la evaluación de un profesional de salud".
+
+═══════════════════════════════════════════════════════════════
+DATOS DEL PRODUCTO A ANALIZAR:
+═══════════════════════════════════════════════════════════════
+
+DESCRIPCIÓN: ${descripcion}
+LABORATORIO: ${laboratorio}
+
+Por favor, proporciona la información farmacéutica completa siguiendo el formato que corresponda según el tipo de producto.`;
+
+                try {
+                    await navigator.clipboard.writeText(promptFarmaceutico);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: '✅ ¡Copiado al portapapeles!',
+                        html: `
+                        <div style="text-align: left; font-size: 14px;">
+                            <p><strong>Producto:</strong> ${descripcion}</p>
+                            <p><strong>Laboratorio:</strong> ${laboratorio}</p>
+                            <hr>
+                            <p style="color: #666;">Ahora puedes pegarlo (Ctrl+V) en ChatGPT u otra IA para obtener información farmacéutica completa (medicamentos, dermocosméticos, pañales, fórmulas, etc.).</p>
+                        </div>
+                    `,
+                        confirmButtonColor: '#009739',
+                        confirmButtonText: 'Entendido'
+                    });
+                } catch (error) {
+                    console.error('Error al copiar:', error);
+                    mostrarAlerta('No se pudo copiar al portapapeles. Intenta de nuevo.', 'error');
+                }
+            }
+
+            // === CARGA DE ARCHIVOS ===
+
+            document.getElementById('btnCargarArchivo').addEventListener('click', function () {
+                const fileInput = document.getElementById('fileInput');
+                if (fileInput.files.length > 0) {
+                    procesarArchivoExcel(fileInput.files[0]);
+                } else {
+                    mostrarAlerta('Selecciona un archivo', 'warning');
+                }
+            });
+
+            document.getElementById('fileInput').addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const allowedExtensions = ['xlsx', 'xls', 'xlsb', 'ods'];
+                    const extension = file.name.split('.').pop().toLowerCase();
+
+                    if (!allowedExtensions.includes(extension)) {
+                        mostrarAlerta('Solo se permiten archivos Excel (.xlsx, .xls, .ods)', 'error');
+                        e.target.value = '';
+                        return;
+                    }
+
+                    if (file.size > 5 * 1024 * 1024) {
+                        mostrarAlerta('El archivo es demasiado grande (máximo 5MB)', 'error');
+                        e.target.value = '';
+                    }
+                }
+            });
+
+            // === ELIMINACIÓN ===
+
+            document.getElementById('btnEliminarTodo').addEventListener('click', eliminarTodo);
+            document.getElementById('btnConfirmDelete').addEventListener('click', eliminarFila);
+
+            // === FILTROS ===
+
+            document.getElementById('btnAplicarFiltro').addEventListener('click', aplicarFiltros);
+            document.getElementById('btnLimpiarFiltros').addEventListener('click', limpiarFiltros);
+
+            // === EXPORTACIÓN (Botones Principales) ===
+
+            document.getElementById('btnExportarPdf').addEventListener('click', () => exportModal.show());
+            document.getElementById('btnExportarPdf2').addEventListener('click', () => exportModal.show());
+
+            document.getElementById('btnExportarExcel').addEventListener('click', exportarExcel);
+            document.getElementById('btnExportarExcel2').addEventListener('click', exportarExcel);
+
+            // === EXPORTACIÓN (Botones Dentro del Modal) ===
+
+            document.getElementById('optPdfExcepcional').addEventListener('click', exportarPdfExcepcional);
+            document.getElementById('optPdfNoTiene').addEventListener('click', exportarPdfNoTiene);
+            document.getElementById('optPdfCanje').addEventListener('click', exportarPdfCanje);
+            document.getElementById('optPdfTodo').addEventListener('click', exportarPdfTodo);
+
+            // === FORMATO DE FECHAS (Inputs principales) ===
+
+            ['inputFecha', 'filtroFecha', 'filtroUrgente'].forEach(function (id) {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', function () {
+                        el.value = el.value.replace(/\D/g, '').slice(0, 4);
+                    });
+                    el.addEventListener('blur', function () {
+                        formatoMmAaaa(el);
+                    });
+                }
+            });
+
+            // === FORMATO INPUT EXPORTAR ===
+
+            const inputExportUrgente = document.getElementById('inputExportUrgente');
+
+            inputExportUrgente.addEventListener('input', function (e) {
+                let value = this.value.replace(/\D/g, '');
+
+                if (value.length >= 2) {
+                    let mes = parseInt(value.substring(0, 2));
+                    if (mes === 0 || mes > 12) {
+                        this.value = '';
+                        return;
+                    }
+                }
+
+                if (value.length === 4) {
+                    let mes = value.substring(0, 2);
+                    let anio = value.substring(2, 4);
+                    this.value = `${mes}/20${anio}`;
+                } else {
+                    this.value = value;
+                }
+            });
+
+            inputExportUrgente.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('optPdfCanje').click();
+                }
+            });
+
+            // === NAVEGACIÓN CON ENTER (Formulario Principal) ===
+
+            document.getElementById('inputFecha').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('inputResponsable').focus();
+                }
+            });
+
+            document.getElementById('inputResponsable').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('inputEntero').focus();
+                }
+            });
+
+            document.getElementById('inputEntero').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('inputFraccion').focus();
+                }
+            });
+
+            document.getElementById('inputFraccion').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('btnGuardar').click();
+                }
+            });
+
+            // === SELECCIÓN AUTOMÁTICA ===
+
+            ['inputCodigo', 'inputResponsable', 'inputEntero', 'inputFraccion'].forEach(function (id) {
+                const campo = document.getElementById(id);
+                if (campo) {
+                    campo.addEventListener('focus', function () {
+                        if (this.value && this.value.trim().length > 0) {
+                            this.select();
+                        }
+                    });
+                }
+            });
+
+
+            // === ATAJO F1 PARA ESCÁNER ===
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'F1') {
+                    e.preventDefault();
+
+                    const inputCodigo = document.getElementById('inputCodigo');
+
+                    inputCodigo.value = '';
+
+                    inputCodigo.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+
+                    setTimeout(() => {
+                        inputCodigo.focus();
+                        inputCodigo.select();
+                    }, 350);
+
+                    mostrarAlerta('Listo para escanear producto', 'info');
+                }
+            });
+
+
+            // === PREVENCIÓN DE CIERRE ===
+
+            window.addEventListener('beforeunload', function (e) {
+                if (AppState.listaCanjes.length > 0 || AppState.archivoActual) {
+                    const mensaje = "¿Estás seguro de salir o recargar? Se perderán los datos no guardados.";
+                    e.preventDefault();
+                    e.returnValue = mensaje;
+                    return mensaje;
+                }
+            });
+
+            // === INICIALIZACIÓN FINAL ===
+
+            localStorage.clear();
+            localStorage.removeItem("archivoPolitica");
+            verificarUltimoArchivo();
+            actualizarTabla();
+        });
+    </script>
+</body>
+
+</html>
