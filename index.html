@@ -820,7 +820,7 @@
 
                 const mesesRestar = {
                     'POLÍTICA REGULAR': 4,
-                    'NO TIENE POLÍTICA': 2,
+                    'NO TIENE POLÍTICA': 1,
                     'POLÍTICA EXCEPCIONAL': 1
                 };
 
@@ -975,27 +975,12 @@ const condicionLabel = document.getElementById('labelCondicionPolitica');
 const condicionPanel = document.getElementById('panelCondicionPolitica');
 const alerta = document.getElementById('alertCondicion');
 
-const politica = (producto['POLITICA'] || '').toUpperCase();
+const condicionCanje = (producto['Condición para Canje Entero'] || '').toString().trim();
 
 if (condicionLabel && condicionPanel && alerta) {
-
-    let mensaje = '';
-
-    if (politica.includes('REGULAR') || politica.includes('TIENE POLÍTICA')) {
-        mensaje = '🟢 Lima/Provincia: 4 meses | Jorsa: 5 meses antes de la F.V';
-        alerta.className = 'alert alert-success fw-bold shadow-sm';
-    }
-    else if (politica.includes('NO TIENE')) {
-        mensaje = '🔴 Descargar como expirado sin canje 1 mes antes de la F.V';
-        alerta.className = 'alert alert-danger fw-bold shadow-sm';
-    }
-    else if (politica.includes('EXCEPCIONAL')) {
-        mensaje = '🟡 Lima/Provincia: 1 mes | Jorsa: 2 meses antes de la F.V';
-        alerta.className = 'alert alert-warning fw-bold shadow-sm';
-    }
-
-    condicionLabel.textContent = mensaje;
-    condicionPanel.style.display = mensaje ? 'block' : 'none';
+    condicionLabel.textContent = condicionCanje;
+    alerta.className = 'alert alert-info fw-bold shadow-sm';
+    condicionPanel.style.display = condicionCanje ? 'block' : 'none';
 }
 AppState.productoActual = producto;
             document.getElementById('inputFecha').focus();
