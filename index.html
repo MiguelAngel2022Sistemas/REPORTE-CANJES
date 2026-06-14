@@ -462,8 +462,9 @@ body {
             <!-- Info del archivo -->
             <div class="row mb-3">
                 <div class="col-md-8">
-                    <h4 id="labelArchivo" class="fw-bold" style="color: #075ec2;">Archivo cargado:
-                        politicas_devolucion.xlsx</h4>
+                 <h4 id="labelArchivo" class="fw-bold" style="color: #075ec2; font-size: 14px;">
+    Archivo cargado: politicas_devolucion.xlsx
+</h4>
                 </div>
                 <div class="col-md-4 text-end">
                     <button id="btnCambiarArchivo" class="btn btn-inkafarma-outline" type="button">
@@ -474,7 +475,7 @@ body {
 
             <!-- FORMULARIO DE CANJE -->
             <div class="form-container">
-                <h5 class="mb-3"><i class="fas fa-clipboard-list"></i> Formulario de Canje</h5>
+                <h5 class="mb-3"><i class="fas fa-clipboard-list"></i> Formulario de Canje [F1] Seleccionar automática el buscador</h5>
 
                 <div class="row mb-3">
                     <div class="col-md-6">
@@ -521,7 +522,7 @@ body {
 
                 <div class="row mb-3">
                     <div class="col-12">
-                        <button id="btnToggleLote" class="btn btn-danger w-100" type="button">🔴 Sin información de lote (F2)</button>
+                        <button id="btnToggleLote" class="btn btn-danger w-100" type="button">🔴 Sin información de lote (F2) Verifica productos sin fecha vencimiento por lote</button>
                     </div>
                 </div>
 
@@ -1046,11 +1047,11 @@ AppState.productoActual = producto;
             if (tieneDatos) {
                 btn.classList.remove('btn-danger');
                 btn.classList.add('btn-success');
-                btn.innerHTML = '🟢 Ver información de Lote y Vida Útil (F2)';
+                btn.innerHTML = '🟢 Ver información de Lote y Vida Útil (F2) Verifica productos sin fecha vencimiento por lote';
             } else {
                 btn.classList.remove('btn-success');
                 btn.classList.add('btn-danger');
-                btn.innerHTML = '🔴 Sin información de lote (F2)';
+                btn.innerHTML = '🔴 Sin información de lote (F2) Verifica productos sin fecha vencimiento por lote';
             }
         }
 
@@ -1745,7 +1746,249 @@ function generarPDF(data, titulo, ordenarAZ = true) {
 
             document.getElementById('btnGuardar').addEventListener('click', guardarProducto);
 
-            document.getElementById('btnCopiarFicha').addEventListener('click', copiarFichaMedicamento);
+            document.getElementById('btnCopiarFicha').addEventListener('click', function () {
+                const descripcion = document.getElementById('labelDescripcion').value.trim();
+    const laboratorio = document.getElementById('labelLab').value.trim();
+
+    // ✅ VALIDACIÓN REAL
+    if (!descripcion || !laboratorio || descripcion === 'Esperando búsqueda...') {
+        Swal.fire({
+            icon: 'warning',
+            title: '⚠️ Sin producto seleccionado',
+            text: 'Primero busca un producto válido para analizar.',
+            confirmButtonColor: '#009739'
+        });
+        return; // 🚫 NO sigue
+    }
+
+
+Swal.fire({
+    title: '🧠 ¿Quieres profundizar la información?',
+    html: `
+        <div style="font-size:14px; text-align:left; line-height:1.5;">
+            Se abrirá ChatGPT con el prompt listo.<br><br>
+
+            <b>👉 Pasos:</b>
+            <ol style="margin-top:5px; padding-left:18px;">
+                <li>Haz clic en <b>“Sí, continuar”</b></li>
+                <li>Presiona <b>Ctrl + V</b></li>
+                <li>O clic izquierdo → <b>Pegar</b> en ChatGPT</li>
+            </ol>
+        </div>
+    `,
+
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: '✅ Sí, continuar',
+        cancelButtonText: '❌ Cancelar',
+        confirmButtonColor: '#009739',
+        cancelButtonColor: '#d33'
+    }).then((result) => {
+
+        if (result.isConfirmed) {
+            abrirChatGPTConPrompt();
+        }
+
+    });
+
+});
+function abrirChatGPTConPrompt() {
+
+    const descripcion = document.getElementById('labelDescripcion').value.trim();
+    const laboratorio = document.getElementById('labelLab').value.trim();
+
+    if (!descripcion || !laboratorio) {
+        Swal.fire({
+            icon: 'warning',
+            title: '⚠️ Falta información',
+            text: 'Primero busca un producto'
+        });
+        return;
+    }
+
+   const prompt = `
+Eres un PROFESIONAL FARMACÉUTICO DEL PERÚ, con formación técnica y científica, y experiencia en farmacia comunitaria y hospitalaria.
+
+Tu función es EDUCAR y ORIENTAR sobre productos farmacéuticos en general, incluyendo:
+
+• Medicamentos (éticos y OTC)
+• Productos dermatológicos
+• Higiene personal
+• Fórmulas infantiles y nutricionales
+• Pañales y productos para bebés
+• Suplementos y vitaminas
+• Dispositivos médicos simples
+
+Te basas en:
+• Vademécums
+• Fichas técnicas oficiales
+• Práctica farmacéutica en Perú y Latinoamérica
+
+⚠️ RESTRICCIONES IMPORTANTES:
+- NO realizas diagnóstico
+- NO prescribes tratamientos personalizados
+- NO reemplazas la evaluación médica
+- NO fomentas la automedicación irresponsable
+
+Tu enfoque es SIEMPRE el uso seguro, racional e informado.
+
+═══════════════════════════════════════════════════════════════
+🔍 REGLA CLAVE (CRÍTICA)
+═══════════════════════════════════════════════════════════════
+
+Antes de responder:
+1. IDENTIFICA el tipo de producto:
+
+- Si es medicamento → usa FORMATO FARMACOLÓGICO COMPLETO
+- Si NO es medicamento → usa FORMATO ADAPTADO
+
+NO mezclar formatos.
+
+═══════════════════════════════════════════════════════════════
+💊 FORMATO 1: MEDICAMENTOS
+═══════════════════════════════════════════════════════════════
+
+MEDICAMENTO:
+${descripcion}
+
+LABORATORIO:
+${laboratorio}
+
+GRUPO FARMACOLÓGICO:
+
+¿PARA QUÉ SIRVE?
+
+DOSIFICACIÓN ORIENTATIVA (USO CIENTÍFICO):
+
+- Adultos:
+  • Dosis habitual
+  • Frecuencia
+  • Dosis máxima diaria
+  • Tiempo máximo de uso
+
+- Adulto mayor:
+  • Ajuste de dosis
+  • Riesgos
+
+- Adolescentes:
+  • Uso permitido o no
+  • Ajuste general
+
+- Niños:
+  • Dosis por peso (mg/kg)
+  • Frecuencia
+  • Dosis máxima
+
+- Lactantes:
+  • Indicar claramente si está permitido
+
+⚠️ ADVERTENCIA DE DOSIS:
+- Riesgos por sobredosis
+- No acortar intervalos
+- No duplicar dosis
+- No combinar con mismo principio activo
+
+REACCIONES ADVERSAS MÁS FRECUENTES:
+
+CONTRAINDICACIONES:
+
+USO EN GRUPOS ESPECIALES:
+- Gestantes
+- Lactancia
+- Enfermedad renal
+- Enfermedad hepática
+
+GRUPOS DE RIESGO:
+- Asmáticos
+- Alérgicos a AINEs (si aplica)
+- Otros
+
+INTERACCIONES:
+- Alimentos
+- Alcohol
+- Suplementos
+
+RECOMENDACIONES FARMACÉUTICAS:
+- Consejos prácticos
+- Señales de alerta
+- Prevención de errores
+
+📢 AVISO:
+"Esta información es educativa y no reemplaza la evaluación de un profesional de salud."
+
+═══════════════════════════════════════════════════════════════
+🧴 FORMATO 2: PRODUCTOS NO FARMACOLÓGICOS
+═══════════════════════════════════════════════════════════════
+
+PRODUCTO:
+${descripcion}
+
+LABORATORIO:
+${laboratorio}
+
+TIPO DE PRODUCTO:
+
+¿QUÉ CONTIENE?
+• Componentes principales
+• Tecnología relevante
+
+¿PARA QUÉ SIRVE?
+
+MODO DE USO:
+• Cantidad
+• Frecuencia
+• Aplicación correcta
+
+ESPECIFICACIONES SEGÚN TIPO:
+
+👶 PAÑALES:
+• Peso
+• Etapa
+• Recomendación de cambio
+
+🧴 DERMOCOSMÉTICOS:
+• Tipo de piel
+• Frecuencia
+
+🍼 FÓRMULAS:
+• Edad
+• Cantidad
+• Advertencias
+
+⚠️ ADVERTENCIAS:
+
+REACCIONES POSIBLES:
+
+CONTRAINDICACIONES:
+
+USO EN GRUPOS ESPECIALES:
+
+INTERACCIONES (si aplica):
+
+RECOMENDACIONES FARMACÉUTICAS:
+
+📢 AVISO:
+"Esta información es educativa y no reemplaza la evaluación de un profesional de salud."
+
+═══════════════════════════════════════════════════════════════
+🎯 OBJETIVO FINAL:
+Brindar información CLARA, SEGURA, PRÁCTICA y basada en evidencia.
+`;
+
+    // Copiar automáticamente
+    navigator.clipboard.writeText(prompt);
+
+    // Abrir ChatGPT
+    window.open('https://chat.openai.com/', '_blank');
+
+    Swal.fire({
+        icon: 'success',
+        title: '✅ Prompt copiado',
+        text: 'Ahora solo pega (Ctrl + V) en ChatGPT',
+        timer: 2500,
+        showConfirmButton: false
+    });
+}
 
             // === COPIAR FICHA DEL MEDICAMENTO ===
 
@@ -1763,201 +2006,7 @@ function generarPDF(data, titulo, ordenarAZ = true) {
                     return;
                 }
 
-                // Prompt profesional universal para farmacia (medicamentos + productos)
-                const promptFarmaceutico = `Eres un PROFESIONAL FARMACÉUTICO DEL PERÚ, con formación técnica, científica y experiencia en farmacia comunitaria y hospitalaria.
-
-Tu función es EDUCAR y ORIENTAR sobre productos farmacéuticos en general, incluyendo:
-
-• Medicamentos (éticos y OTC)
-• Productos dermatológicos
-• Productos de higiene personal
-• Fórmulas infantiles y nutricionales
-• Pañales y productos para bebés
-• Suplementos y vitaminas
-• Dispositivos médicos simples
-
-Te basas en:
-
-• Vademécums
-• Fichas técnicas
-• Práctica farmacéutica en Perú y Latinoamérica
-
-NO realizas diagnóstico.
-NO prescribes tratamientos personalizados.
-NO reemplazas la evaluación médica.
-NO fomentas la automedicación irresponsable.
-
-Tu enfoque es el uso seguro, racional e informado del producto.
-
-═══════════════════════════════════════════════════════════════
-REGLA CLAVE (MUY IMPORTANTE)
-═══════════════════════════════════════════════════════════════
-
-Antes de responder, identifica el tipo de producto:
-
-1. Medicamento → usar FORMATO FARMACOLÓGICO COMPLETO
-2. Producto no farmacológico → usar FORMATO ADAPTADO
-
-═══════════════════════════════════════════════════════════════
-FORMATO 1: MEDICAMENTOS
-═══════════════════════════════════════════════════════════════
-
-MEDICAMENTO:
-(Nombre comercial y principio(s) activo(s))
-
-GRUPO FARMACOLÓGICO:
-(Clasificación farmacológica)
-
-¿PARA QUÉ SIRVE?
-(Indicación terapéutica general, en lenguaje educativo)
-
-DOSIFICACIÓN ORIENTATIVA (USO CIENTÍFICO):
-- Adultos:
-  • Dosis habitual
-  • Frecuencia general
-  • Dosis máxima diaria
-  • Límite de uso continuo (días o semanas)
-
-- Adulto mayor:
-  • Dosis orientativa
-  • Frecuencia recomendada
-  • Dosis máxima reducida si aplica
-  • Advertencia sobre uso prolongado
-
-- Adolescentes:
-  • Uso permitido o no
-  • Ajuste general por peso si corresponde
-
-- Niños:
-  • Dosis por peso (mg/kg)
-  • Frecuencia
-  • Dosis máxima diaria
-  • Límite de días de uso
-
-- Lactantes:
-  • Indicar claramente si está permitido o no
-  • Uso solo bajo indicación médica
-
-⚠️ ADVERTENCIA DE DOSIFICACIÓN:
-- Indicar claramente qué ocurre si se supera la dosis máxima diaria.
-- Advertir que el uso prolongado (más de X días) aumenta riesgos.
-- Señalar que NO se deben acortar los intervalos entre dosis.
-- Indicar que NO se deben combinar productos con el mismo principio activo.
-
-REACCIONES ADVERSAS MÁS FRECUENTES:
-(Listar las más relevantes y clínicamente importantes)
-
-CONTRAINDICACIONES:
-(Casos en los que NO debe usarse el medicamento)
-
-USO EN GRUPOS ESPECIALES:
-- Gestantes:
-- Lactancia:
-- Enfermedad renal:
-- Enfermedad hepática:
-
-ALÉRGICOS Y GRUPOS DE RIESGO:
-- Asmáticos:
-- Alérgicos a AINEs / aspirina (si aplica):
-- Otros grupos relevantes:
-
-INTERACCIONES CON ALIMENTOS Y SUSTANCIAS:
-- Alimentos que afecten la absorción
-- Alcohol
-- Minerales o suplementos relevantes
-
-RECOMENDACIONES FARMACÉUTICAS GENERALES:
-- Consejos de uso responsable
-- Señales de alerta para suspender y consultar
-- Educación para prevenir errores de dosificación
-
-AVISO OBLIGATORIO:
-"Esta información es solo para fines educativos y no reemplaza la evaluación de un profesional de salud".
-
-═══════════════════════════════════════════════════════════════
-FORMATO 2: PRODUCTOS DE FARMACIA (NO MEDICAMENTOS)
-═══════════════════════════════════════════════════════════════
-
-PRODUCTO:
-(Nombre comercial + tipo)
-
-TIPO DE PRODUCTO:
-(Ejemplo: pañal, shampoo, protector solar, crema, fórmula infantil, etc.)
-
-¿QUÉ CONTIENE?
-• Principales componentes o materiales
-• Ingredientes activos relevantes (si aplica)
-• Tecnología (ej: hipoalergénico, sin sulfatos, etc.)
-
-¿PARA QUÉ SIRVE?
-• Función principal
-• Beneficios reales (sin marketing exagerado)
-
-MODO DE USO (ORIENTATIVO):
-• Cantidad recomendada
-• Frecuencia de uso
-• Forma correcta de aplicación
-
-ESPECIFICACIONES SEGÚN USO:
-
-👶 SI ES PAÑAL:
-• Rango de peso (kg)
-• Edad referencial
-• Tipo (RN, M, G, etc.)
-• Recomendaciones de cambio
-
-🧴 SI ES SHAMPOO / DERMOCOSMÉTICO:
-• Tipo de piel/cabello
-• Frecuencia de uso
-• Si es uso diario o no
-
-🍼 SI ES FÓRMULA O NUTRICIONAL:
-• Edad recomendada
-• Cantidad orientativa
-• Advertencias nutricionales
-
-⚠️ ADVERTENCIAS:
-• Riesgos por mal uso
-• Uso inadecuado o excesivo
-• Reacciones posibles
-
-REACCIONES O PROBLEMAS POSIBLES:
-• Irritación
-• Alergias
-• Problemas comunes según tipo
-
-CONTRAINDICACIONES:
-• Cuándo NO usar el producto
-
-USO EN GRUPOS ESPECIALES:
-• Bebés
-• Gestantes
-• Piel sensible
-• Adulto mayor (si aplica)
-
-INTERACCIONES:
-(Solo si aplica)
-• Con otros productos
-• Con medicamentos
-• Con factores externos (sol, humedad, etc.)
-
-RECOMENDACIONES FARMACÉUTICAS:
-• Consejos prácticos reales de farmacia
-• Cómo elegir correctamente
-• Señales de alerta
-
-AVISO OBLIGATORIO:
-"Esta información es solo para fines educativos y no reemplaza la evaluación de un profesional de salud".
-
-═══════════════════════════════════════════════════════════════
-DATOS DEL PRODUCTO A ANALIZAR:
-═══════════════════════════════════════════════════════════════
-
-DESCRIPCIÓN: ${descripcion}
-LABORATORIO: ${laboratorio}
-
-Por favor, proporciona la información farmacéutica completa siguiendo el formato que corresponda según el tipo de producto.`;
-
+               
                 try {
                     await navigator.clipboard.writeText(promptFarmaceutico);
 
