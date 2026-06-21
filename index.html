@@ -69,25 +69,25 @@ body {
    ========================== */
 
 .welcome-screen {
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 10px;
     text-align: center;
-
-    transform: translateY(90px); /* 👈 ESTO LO BAJA */
 }
 
+
 .welcome-title {
-    font-family: 'Poppins', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
 
-    font-size: 3rem;
-    font-weight: 600; /* 👈 baja el peso */
-
-    letter-spacing: 1px; /* 👈 mejora estilo */
+    font-size: clamp(1.5rem, 2.5vw, 2.2rem); /* ✅ RESPONSIVE REAL */
+    font-weight: 700;
 
     color: var(--inkafarma-orange);
+    text-align: center;
+    line-height: 1.2;
 }
 
 
@@ -291,24 +291,30 @@ body {
 
 @media (max-width: 992px) {
 
-.welcome-title {
-    font-family: 'Poppins', 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; /* 👈 CAMBIA LA LETRA */
+    .welcome-title {
+        font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+        color: var(--inkafarma-orange);
 
-    color: var(--inkafarma-orange);
-    font-size: 5rem;
-    font-weight: 800;
+        font-size: 2.2rem;
+        font-weight: 700;
 
-    text-align: center;
-}
+        text-align: center;
+        line-height: 1.2;
+        margin-bottom: 10px;
+    }
 
     .welcome-logo {
-        max-width: 320px;
+        max-width: 280px;
+        width: 100%;
+        height: auto;
     }
 
     .app-title {
         font-size: 0.95rem;
+        text-align: center;
     }
 }
+
 
 /* RESPONSIVE CELULAR */
 
@@ -482,6 +488,7 @@ body {
                         <div class="input-group">
                             <span class="input-group-text">📦 Producto</span>
                             <input type="text" id="inputCodigo" class="form-control" placeholder="Código POSU o EAN">
+                            <button id="btnScan" class="btn btn-success d-none" type="button">📷</button>
                             <button id="btnBuscar" class="btn btn-inkafarma" type="button">Buscar</button>
                         </div>
                     </div>
@@ -819,6 +826,8 @@ body {
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+
+    <script src="https://unpkg.com/html5-qrcode"></script>
 
     <!-- Base de Datos Local de Lotes -->
     <script src="Data_Lectura_Interpretativa_Lote.js"></script>
@@ -1663,6 +1672,40 @@ function generarPDF(data, titulo, ordenarAZ = true) {
 
         document.addEventListener('DOMContentLoaded', function () {
 
+            function esMovil() {
+                return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            }
+
+            if (esMovil()) {
+                document.getElementById('btnScan')?.classList.remove('d-none');
+            }
+
+            let html5QrCode = null;
+
+            document.getElementById('btnScan')?.addEventListener('click', () => {
+                const reader = document.getElementById('reader');
+                reader.style.display = 'block';
+
+                html5QrCode = new Html5Qrcode("reader");
+
+                html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: 250 },
+                    (decodedText) => {
+                        document.getElementById('inputCodigo').value = decodedText;
+
+                        navigator.vibrate?.(200);
+
+                        html5QrCode.stop().then(() => {
+                            reader.style.display = 'none';
+                            buscarProducto();
+                        });
+                    },
+                    () => {}
+                ).catch(err => console.error("Error cámara:", err));
+            });
+
+
             // Carga Automática de la BD de Lotes desde el archivo JS (bypass CORS offline local)
             if (window.datosLoteGlobal) {
                 AppState.datosLote = window.datosLoteGlobal;
@@ -2267,6 +2310,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    loteInfoModal?.show();
  }; }
 });
-</script></body>
+</script><div id="reader" style="display:none;width:100%;max-width:400px;margin:20px auto;"></div>
+</body>
 
 </html>
