@@ -1683,7 +1683,7 @@ async function cargarExcelPredeterminado() {
             didOpen: () => Swal.showLoading()
         });
 
-        const urlExcel = 'https://tjsvctvygdyrvwuhdhgc.supabase.co/storage/v1/object/public/archivos/politica.xlsb';
+        const urlExcel = 'https://tjsvcvtygdyrvwuhdhgc.supabase.co/storage/v1/object/public/archivos/politica.xlsb';
 
         const response = await fetch(urlExcel);
         if (!response.ok) throw new Error('No se pudo descargar el archivo corporativo');
