@@ -1683,43 +1683,40 @@ async function cargarExcelPredeterminado() {
             didOpen: () => Swal.showLoading()
         });
 
-        // 🔥 IMPORTANTE: verifica que esta URL sea EXACTA
-        const urlExcel = 'https://tjsvctvygdyrvwuhdhgc.supabase.co/storage/v1/object/public/archivos/politica.xlsb';
+        // ✅ SIEMPRE ESTE NOMBRE (no depende del usuario)
+        const urlExcel = 'https://tjsvctvygdyrvwuhdhgc.supabase.co/storage/v1/object/public/archivos/excel_actual.xlsb';
 
         const response = await fetch(urlExcel);
 
-        // Validación más clara
         if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
+            throw new Error('El Excel aún no ha sido cargado al sistema');
         }
 
         const blob = await response.blob();
 
-        // Validar que sí tenga contenido
         if (blob.size === 0) {
-            throw new Error('El archivo está vacío o no existe');
+            throw new Error('El archivo está vacío');
         }
 
         const file = new File(
             [blob],
-            'politica.xlsb',
+            'excel_actual.xlsb',
             { type: 'application/vnd.ms-excel.sheet.binary.macroenabled.12' }
         );
 
         Swal.close();
 
-        // ✅ Procesar archivo
         procesarArchivoExcel(file);
 
     } catch (error) {
         Swal.close();
 
-        console.error("Error al cargar Excel:", error);
+        console.error("Error real:", error);
 
         Swal.fire({
             icon: 'error',
-            title: 'Error al cargar Excel',
-            text: error.message || 'No se pudo cargar el archivo corporativo'
+            title: 'Error',
+            text: error.message || 'No se pudo cargar el Excel corporativo'
         });
     }
 }
