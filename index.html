@@ -402,6 +402,12 @@ body {
             <img src="MIFARMA_LOGO.png" alt="Logo Mifarma" class="welcome-logo">
         </div>
         <div class="d-flex flex-column gap-3">
+            <button id="btnExcelPredeterminado" class="btn btn-lg btn-success" type="button">
+                📊 Excel Corporativo Predeterminado
+            </button>
+            <button id="btnCambiarPredeterminado" class="btn btn-lg btn-warning" type="button">
+                🔐 Cambiar Excel Predeterminado
+            </button>
             <button id="btnUltimoArchivo" class="btn btn-lg btn-inkafarma-outline d-none" type="button">
                 Usar último archivo trabajado
             </button>
@@ -843,7 +849,8 @@ body {
             archivoActual: null,
             productoActual: null,
             indexSeleccionado: -1,
-            ultimoIndexInsertado: 0
+            ultimoIndexInsertado: 0,
+            excelPredeterminado: null
         };
 
         // Variables para modales
@@ -1665,7 +1672,57 @@ function generarPDF(data, titulo, ordenarAZ = true) {
             reader.readAsArrayBuffer(file);
         }
 
-        // ==================== INICIALIZACIÓN ====================
+        
+// ==================== EXCEL PREDETERMINADO ====================
+
+async function cargarExcelPredeterminado() {
+    try {
+        Swal.fire({
+            title: 'Cargando Excel corporativo...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        const urlExcel = 'https://tjsvctvygdyrvwuhdhgc.supabase.co/storage/v1/object/public/archivos/politica.xlsb';
+
+        const response = await fetch(urlExcel);
+        if (!response.ok) throw new Error('No se pudo descargar el archivo corporativo');
+
+        const blob = await response.blob();
+        const file = new File([blob], 'politica.xlsb', { type: blob.type || 'application/octet-stream' });
+
+        Swal.close();
+        procesarArchivoExcel(file);
+
+    } catch (error) {
+        Swal.close();
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message || 'No se pudo cargar el Excel corporativo'
+        });
+    }
+}
+
+async function validarCambioPredeterminado() {
+    const { value: password } = await Swal.fire({
+        title: 'Acceso restringido',
+        input: 'password',
+        inputLabel: 'Ingrese contraseña',
+        showCancelButton: true
+    });
+
+    if (!password) return;
+
+    if (password !== '12345') {
+        mostrarAlerta('Contraseña incorrecta', 'error');
+        return;
+    }
+
+    fileModal.show();
+}
+
+// ==================== INICIALIZACIÓN ====================
 
         document.addEventListener('DOMContentLoaded', function () {
 
@@ -1704,7 +1761,12 @@ function generarPDF(data, titulo, ordenarAZ = true) {
 
             // === NAVEGACIÓN ===
 
-            document.getElementById('btnNuevoArchivo').addEventListener('click', function () {
+            
+document.getElementById('btnExcelPredeterminado')?.addEventListener('click', cargarExcelPredeterminado);
+
+document.getElementById('btnCambiarPredeterminado')?.addEventListener('click', validarCambioPredeterminado);
+
+document.getElementById('btnNuevoArchivo').addEventListener('click', function () {
                 fileModal.show();
             });
 
