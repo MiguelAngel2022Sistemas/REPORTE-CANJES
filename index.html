@@ -1683,26 +1683,47 @@ async function cargarExcelPredeterminado() {
             didOpen: () => Swal.showLoading()
         });
 
-        const urlExcel = 'https://tjsvcvtygdyrvwuhdhgc.supabase.co/storage/v1/object/public/archivos/politica.xlsb';
+        // 🔥 IMPORTANTE: verifica que esta URL sea EXACTA
+        const urlExcel = 'https://tjsvctvygdyrvwuhdhgc.supabase.co/storage/v1/object/public/archivos/politica.xlsb';
 
         const response = await fetch(urlExcel);
-        if (!response.ok) throw new Error('No se pudo descargar el archivo corporativo');
+
+        // Validación más clara
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+        }
 
         const blob = await response.blob();
-        const file = new File([blob], 'politica.xlsb', { type: blob.type || 'application/octet-stream' });
+
+        // Validar que sí tenga contenido
+        if (blob.size === 0) {
+            throw new Error('El archivo está vacío o no existe');
+        }
+
+        const file = new File(
+            [blob],
+            'politica.xlsb',
+            { type: 'application/vnd.ms-excel.sheet.binary.macroenabled.12' }
+        );
 
         Swal.close();
+
+        // ✅ Procesar archivo
         procesarArchivoExcel(file);
 
     } catch (error) {
         Swal.close();
+
+        console.error("Error al cargar Excel:", error);
+
         Swal.fire({
             icon: 'error',
-            title: 'Error',
-            text: error.message || 'No se pudo cargar el Excel corporativo'
+            title: 'Error al cargar Excel',
+            text: error.message || 'No se pudo cargar el archivo corporativo'
         });
     }
 }
+
 
 async function validarCambioPredeterminado() {
     const { value: password } = await Swal.fire({
