@@ -30,26 +30,27 @@ body {
     margin: 0;
     padding: 0;
     color: #333;
+    font-size: 11px;
 }
 
 /* CONTENEDORES */
 
 .container-fluid {
-    max-width: 1000px;
+    max-width: 720px;
     margin: auto;
 }
 
 .app-container {
-    max-width: 1000px;
+    max-width: 720px;
     margin: 0 auto;
-    padding: 8px;
+    padding: 4px;
 }
 
 /* CABECERA */
 
 .app-header {
     background-color: white;
-    padding: 8px 12px;
+    padding: 3px 6px;
     box-shadow: 0 2px 6px rgba(0,0,0,.08);
     position: sticky;
     top: 0;
@@ -59,7 +60,7 @@ body {
 .app-title {
     color: var(--inkafarma-orange);
     font-weight: 700;
-    font-size: 1rem;
+    font-size: 0.72rem;
     text-align: center;
     margin: 0;
 }
@@ -74,33 +75,29 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 10px;
+    padding: 6px;
     text-align: center;
 }
 
-
 .welcome-title {
     font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
-
-    font-size: clamp(1.5rem, 2.5vw, 2.2rem); /* ✅ RESPONSIVE REAL */
+    font-size: clamp(0.9rem, 1.8vw, 1.3rem);
     font-weight: 700;
-
     color: var(--inkafarma-orange);
     text-align: center;
     line-height: 1.2;
 }
 
-
 .welcome-logo-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 5px 0 15px;
+    margin: 2px 0 8px;
 }
 
 .welcome-logo {
     width: 100%;
-    max-width: 420px;
+    max-width: 240px;
     height: auto;
     object-fit: contain;
 }
@@ -110,20 +107,45 @@ body {
 .form-container,
 .table-container {
     background-color: white;
-    border-radius: 10px;
-    padding: 0.8rem;
+    border-radius: 6px;
+    padding: 0.4rem;
     box-shadow: 0 2px 8px rgba(0,0,0,.06);
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-container h5,
+.table-container h5 {
+    font-size: 0.7rem;
+    margin-bottom: 0.3rem;
 }
 
 .form-label {
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.6rem;
+    margin-bottom: 0.1rem;
 }
 
 .form-control,
 .form-select {
-    font-size: 0.9rem;
+    font-size: 0.65rem;
+    padding: 0.15rem 0.3rem;
+    height: auto;
+    min-height: 24px;
+}
+
+.input-group-text {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.3rem;
+}
+
+.input-group .form-control,
+.input-group .form-select {
+    padding: 0.15rem 0.3rem;
+}
+
+.input-group .btn {
+    padding: 0.15rem 0.4rem;
+    font-size: 0.6rem;
 }
 
 .readonly-field {
@@ -139,8 +161,19 @@ body {
 /* BOTONES */
 
 .btn {
-    border-radius: 8px;
-    font-size: 0.9rem;
+    border-radius: 4px;
+    font-size: 0.6rem;
+    padding: 0.15rem 0.4rem;
+}
+
+.btn-sm {
+    font-size: 0.58rem;
+    padding: 0.1rem 0.3rem;
+}
+
+.btn-lg {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.6rem;
 }
 
 .btn-inkafarma {
@@ -177,27 +210,29 @@ body {
 #productosTable thead th {
     background-color: #f1f1f1;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.58rem;
     text-align: center;
+    padding: 0.2rem 0.15rem;
 }
 
 #productosTable td {
-    font-size: 0.85rem;
+    font-size: 0.58rem;
     vertical-align: middle;
+    padding: 0.15rem 0.1rem;
 }
 
 .table-actions .btn {
-    padding: 0.25rem 0.45rem;
-    margin-right: 0.25rem;
-    font-size: 0.75rem;
+    padding: 0.1rem 0.2rem;
+    margin-right: 0.1rem;
+    font-size: 0.55rem;
 }
 
 /* BADGES */
 
 .badge-policy {
-    padding: 4px 8px;
-    border-radius: 5px;
-    font-size: 0.75rem;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 0.55rem;
     font-weight: 600;
 }
 
@@ -219,10 +254,43 @@ body {
 .counter-badge {
     background-color: var(--inkafarma-orange);
     color: white;
-    padding: 4px 10px;
+    padding: 1px 6px;
     border-radius: 50px;
-    font-size: 0.8rem;
+    font-size: 0.6rem;
     font-weight: 600;
+}
+
+/* FILAS INTERNAS - SIN APILAR */
+
+.row.mb-3 {
+    margin-bottom: 0.25rem !important;
+}
+
+.form-container .row {
+    gap: 0.2rem;
+}
+
+/* Asegurar que las columnas NO se apilen */
+.form-container .col-md-6,
+.form-container .col-md-4,
+.form-container .col-md-3,
+.form-container .col-md-8,
+.form-container .col-md-12,
+.form-container .col-auto {
+    flex: 0 0 auto;
+    width: auto;
+}
+
+/* Forzar 2 columnas en filas de pares */
+.form-container .row.mb-3 .col-md-6 {
+    flex: 0 0 calc(50% - 0.2rem);
+    max-width: calc(50% - 0.1rem);
+}
+
+/* Forzar 4 columnas en fila de 4 */
+.form-container .row.mb-3 .col-md-3 {
+    flex: 0 0 calc(25% - 0.3rem);
+    max-width: calc(25% - 0.15rem);
 }
 
 /* RESALTADO */
@@ -239,30 +307,15 @@ body {
 }
 
 @keyframes resaltarFila {
-    0% {
-        background-color: #ffe7d6;
-    }
-    40% {
-        background-color: #ffd2b5;
-    }
-    100% {
-        background-color: transparent;
-    }
+    0% { background-color: #ffe7d6; }
+    40% { background-color: #ffd2b5; }
+    100% { background-color: transparent; }
 }
 
 @keyframes resaltarUrgente {
-    0% {
-        background-color: #fff4a3;
-        color: #c40000;
-    }
-    50% {
-        background-color: #ffe36e;
-        color: #b10000;
-    }
-    100% {
-        background-color: transparent;
-        color: inherit;
-    }
+    0% { background-color: #fff4a3; color: #c40000; }
+    50% { background-color: #ffe36e; color: #b10000; }
+    100% { background-color: transparent; color: inherit; }
 }
 
 /* MODALES */
@@ -270,6 +323,19 @@ body {
 .modal-header {
     background-color: var(--inkafarma-orange);
     color: white;
+    padding: 0.35rem 0.6rem;
+}
+
+.modal-header h5 {
+    font-size: 0.75rem;
+}
+
+.modal-body {
+    padding: 0.4rem;
+}
+
+.modal-footer {
+    padding: 0.3rem 0.4rem;
 }
 
 .modal-header .btn-close {
@@ -280,6 +346,8 @@ body {
     border: 2px solid #e0e0e0;
     background: white;
     transition: .2s;
+    font-size: 0.65rem;
+    padding: 0.3rem 0.4rem;
 }
 
 .export-option-btn:hover {
@@ -287,92 +355,96 @@ body {
     background-color: #fff5ee;
 }
 
+.export-option-btn small {
+    font-size: 0.55rem;
+}
+
+/* ALERTA INFO */
+
+.alert {
+    font-size: 0.6rem;
+    padding: 0.25rem 0.4rem;
+    margin-bottom: 0.25rem;
+}
+
+/* PANEL LOTE */
+
+#panelLote p {
+    font-size: 0.6rem;
+    margin-bottom: 0.1rem;
+}
+
+#panelLote h6 {
+    font-size: 0.65rem;
+}
+
+#panelLote .p-3 {
+    padding: 0.3rem !important;
+}
+
+#panelLote .row .col-md-3 {
+    flex: 0 0 calc(25% - 0.3rem);
+    max-width: calc(25% - 0.15rem);
+}
+
+/* BTN COPIAR FICHA */
+
+#btnCopiarFicha {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+}
+
+/* BTN SIN LOTE */
+
+#btnToggleLote {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.3rem;
+}
+
+/* BTN GUARDAR */
+
+#btnGuardar {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+}
+
+/* LABEL ARCHIVO */
+
+#labelArchivo {
+    font-size: 0.6rem !important;
+}
+
+/* FILTROS */
+
+.form-container .input-group {
+    margin-bottom: 0;
+}
+
+/* BOTONES EXPORTAR TABLA */
+
+.table-container .btn {
+    font-size: 0.58rem;
+    padding: 0.12rem 0.3rem;
+}
+
+.table-container .d-flex.gap-2 .btn {
+    font-size: 0.58rem;
+    padding: 0.12rem 0.3rem;
+}
+
+/* BOTONES INFERIORES */
+
+.d-flex.justify-content-center.gap-2 .btn {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.4rem;
+}
+
 /* RESPONSIVE TABLET */
 
 @media (max-width: 992px) {
-
-    .welcome-title {
-        font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
-        color: var(--inkafarma-orange);
-
-        font-size: 2.2rem;
-        font-weight: 700;
-
-        text-align: center;
-        line-height: 1.2;
-        margin-bottom: 10px;
-    }
-
-    .welcome-logo {
-        max-width: 280px;
-        width: 100%;
-        height: auto;
-    }
-
-    .app-title {
-        font-size: 0.95rem;
-        text-align: center;
-    }
-}
-
-
-/* RESPONSIVE CELULAR */
-
-@media (max-width: 768px) {
-
-    body {
-        font-size: 14px;
-    }
-
-    .container-fluid,
-    .app-container {
-        width: 100%;
-        padding: 5px;
-    }
-
-    .welcome-screen {
-        padding: 5px;
-    }
-
     .welcome-title {
         font-size: 1.2rem;
-        margin-bottom: 8px;
-    }
-
-    .welcome-logo {
-        max-width: 220px;
-    }
-
-    .form-container,
-    .table-container {
-        padding: 10px;
-    }
-
-    .form-control,
-    .form-select,
-    .btn {
-        font-size: 14px;
-    }
-
-    .app-title {
-        font-size: 0.9rem;
-    }
-
-    #btnGuardar {
-        width: 100%;
-        margin-top: 8px;
-        position: sticky;
-        bottom: 5px;
-        z-index: 100;
-    }
-}
-
-/* CELULARES PEQUEÑOS */
-
-@media (max-width: 480px) {
-
-    .welcome-title {
-        font-size: 1rem;
+        margin-bottom: 4px;
     }
 
     .welcome-logo {
@@ -380,12 +452,101 @@ body {
     }
 
     .app-title {
-        font-size: 0.85rem;
+        font-size: 0.65rem;
+    }
+
+    /* Mantener 2 columnas en tablet */
+    .form-container .row.mb-3 .col-md-6 {
+        flex: 0 0 calc(50% - 0.2rem);
+        max-width: calc(50% - 0.1rem);
+    }
+
+    .form-container .row.mb-3 .col-md-3 {
+        flex: 0 0 calc(50% - 0.2rem);
+        max-width: calc(50% - 0.1rem);
+    }
+}
+
+/* RESPONSIVE CELULAR */
+
+@media (max-width: 768px) {
+    body {
+        font-size: 10px;
+    }
+
+    .container-fluid,
+    .app-container {
+        width: 100%;
+        padding: 2px;
+    }
+
+    .welcome-screen {
+        padding: 2px;
+    }
+
+    .welcome-title {
+        font-size: 0.9rem;
+        margin-bottom: 3px;
+    }
+
+    .welcome-logo {
+        max-width: 140px;
+    }
+
+    .form-container,
+    .table-container {
+        padding: 0.3rem;
+    }
+
+    .form-control,
+    .form-select,
+    .btn {
+        font-size: 0.58rem;
+    }
+
+    .app-title {
+        font-size: 0.6rem;
+    }
+
+    /* En celular SI permitimos 2 columnas, no 4 */
+    .form-container .row.mb-3 .col-md-3 {
+        flex: 0 0 calc(50% - 0.2rem);
+        max-width: calc(50% - 0.1rem);
+    }
+
+    #btnGuardar {
+        width: 100%;
+        margin-top: 3px;
+        position: sticky;
+        bottom: 2px;
+        z-index: 100;
+    }
+}
+
+/* CELULARES PEQUEÑOS */
+
+@media (max-width: 480px) {
+    .welcome-title {
+        font-size: 0.75rem;
+    }
+
+    .welcome-logo {
+        max-width: 110px;
+    }
+
+    .app-title {
+        font-size: 0.55rem;
     }
 
     #productosTable td,
     #productosTable th {
-        font-size: 0.75rem;
+        font-size: 0.5rem;
+        padding: 0.1rem 0.05rem;
+    }
+
+    .table-actions .btn {
+        font-size: 0.5rem;
+        padding: 0.05rem 0.15rem;
     }
 }
 </style>
