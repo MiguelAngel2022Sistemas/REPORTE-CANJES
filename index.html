@@ -1673,43 +1673,41 @@ function generarPDF(data, titulo, ordenarAZ = true) {
     const fechaHoy = new Date().toISOString().slice(0, 10);
     const pageWidth = doc.internal.pageSize.getWidth();
 
-// ==================== ENCABEZADO ====================
+    // ==================== ENCABEZADO ====================
 
     doc.setTextColor(0, 0, 0);
 
-    // Título principal: Más grande (16) y en negrita
-    doc.setFontSize(16); 
+    doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
 
     doc.text(
         'GESTOR DE CANJES - REPORTE',
         pageWidth / 2,
-        15, // Bajamos un poco por el tamaño
+        12,
         { align: 'center' }
     );
 
-    // Subtítulos: Más grandes (10) y mantenemos la fuente en 'bold' (negrita)
-    doc.setFontSize(10); 
-    doc.setFont(undefined, 'bold'); // <--- Todo en negrita
+    doc.setFontSize(7);
+    doc.setFont(undefined, 'normal');
 
     doc.text(
         `Tipo: ${titulo}`,
         pageWidth / 2,
-        23, // Separamos los espacios proporcionales al nuevo tamaño
+        18,
         { align: 'center' }
     );
 
     doc.text(
         `Fecha: ${new Date().toLocaleString()}`,
         pageWidth / 2,
-        28,
+        22,
         { align: 'center' }
     );
 
     doc.text(
         `Ítems: ${dataProcesada.length}`,
         pageWidth / 2,
-        33,
+        26,
         { align: 'center' }
     );
 
@@ -1741,13 +1739,15 @@ function generarPDF(data, titulo, ordenarAZ = true) {
         8: { cellWidth: 18, halign: 'center' }
     };
 
-    const totalWidth = 18 + 18 + 50 + 30 + 28 + 14 + 8 + 8 + 18;
+    const totalWidth =
+        18 + 18 + 50 + 30 + 28 + 14 + 8 + 8 + 18;
+
     const marginLeft = (pageWidth - totalWidth) / 2;
 
     // ==================== TABLA ====================
 
     doc.autoTable({
-        startY: 42, // <--- Empezamos más abajo para que no pise el encabezado agrandado
+        startY: 30,
         columns: columns,
         body: dataProcesada,
         theme: 'grid',
@@ -1756,28 +1756,27 @@ function generarPDF(data, titulo, ordenarAZ = true) {
             fillColor: [255, 255, 255],
             textColor: [0, 0, 0],
             fontStyle: 'bold',
-            fontSize: 9.5, // <--- Letra de encabezados más grande
-            cellPadding: 1.5,
+            fontSize: 7.5,
+            cellPadding: 1,
             halign: 'center',
             valign: 'middle',
-            lineWidth: 0.8, // <--- Borde superior e inferior más grueso
+            lineWidth: 0.6,
             lineColor: [0, 0, 0]
         },
 
         styles: {
-            fontSize: 8.5, // <--- Letra de las celdas más grande
-            fontStyle: 'bold', // <--- ¡AÑADIDO! Toda la tabla en negrita
-            cellPadding: 1.2, // <--- Un poco más de margen interno para que respire el texto
+            fontSize: 6.8,
+            cellPadding: 0.8,
             textColor: [0, 0, 0],
             fillColor: [255, 255, 255],
-            lineWidth: 0.5, // <--- Bordes generales más gruesos
+            lineWidth: 0.3,
             lineColor: [0, 0, 0],
             valign: 'middle',
             overflow: 'linebreak'
         },
 
         bodyStyles: {
-            lineWidth: 0.5 // <--- Igualamos los bordes internos
+            lineWidth: 0.25
         },
 
         alternateRowStyles: {
@@ -1788,10 +1787,9 @@ function generarPDF(data, titulo, ordenarAZ = true) {
 
         didDrawCell: function (data) {
             if (data.section === 'head') {
-                data.doc.setLineWidth(1.2); // <--- Borde superior del encabezado extra grueso como en tu imagen
+                data.doc.setLineWidth(0.8);
                 data.doc.setDrawColor(0, 0, 0);
 
-                // Dibuja la línea superior gruesa
                 data.doc.line(
                     data.cell.x,
                     data.cell.y,
