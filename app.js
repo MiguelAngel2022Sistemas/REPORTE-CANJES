@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 // ==================== ESTADO GLOBAL ====================
 const AppState = {
@@ -233,7 +233,12 @@ function togglePanelLote() {
     const btn = document.getElementById('btnToggleLote');
     if (!panel || !btn) return;
     if (btn.classList.contains('btn-danger')) {
-        mostrarAlerta('No hay información de lote disponible.', 'warning');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sin información de lote',
+            text: 'Producto probablemente nuevo. Consultar al DT del local o verificar bien la fecha de vencimiento.',
+            confirmButtonColor: '#ffc107'
+        });
         return;
     }
     panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
