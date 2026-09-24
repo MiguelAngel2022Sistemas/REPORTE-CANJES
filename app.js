@@ -705,9 +705,9 @@ function generarPDF(data, titulo, ordenarAZ = true) {
         },
 
         margin: {
-            top: 5,
+            top: 30,
             left: marginLeft,
-            bottom: 5
+            bottom: 50
         },
 
         tableWidth: totalWidth
