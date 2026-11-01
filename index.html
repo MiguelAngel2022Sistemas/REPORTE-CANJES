@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -33,6 +33,9 @@
             <button id="btnNuevoArchivo" class="btn btn-lg btn-inkafarma" type="button">
                 Insertar tu Excel de política de devolución
             </button>
+            <button id="btnBoletaManualWelcome" class="btn btn-lg btn-success shadow-sm" type="button" style="background: linear-gradient(135deg, #10b981, #059669); border: none;">
+                <i class="fas fa-cash-register me-2"></i> Realizar Boleta Manual (Punto de Venta)
+            </button>
         </div>
         <div style="
     margin-top: 30px;
@@ -46,28 +49,28 @@
     text-align:center;
 ">
 
-    <h1 style="font-size:18px; color:#007bff; font-weight:bold;">
-        ℹ️ NOTA IMPORTANTE
-    </h1>
+            <h1 style="font-size:18px; color:#007bff; font-weight:bold;">
+                ℹ️ NOTA IMPORTANTE
+            </h1>
 
-    <p style="font-size:13px; color:#333; font-weight:bold; line-height:1.6;">
-        Esta herramienta ha sido creada como un <strong>buscador rápido de políticas de devolución</strong>,
-        con el objetivo de reducir el tiempo que normalmente se invierte al abrir y recorrer archivos Excel
-        extensos con grandes volúmenes de datos.
+            <p style="font-size:13px; color:#333; font-weight:bold; line-height:1.6;">
+                Esta herramienta ha sido creada como un <strong>buscador rápido de políticas de devolución</strong>,
+                con el objetivo de reducir el tiempo que normalmente se invierte al abrir y recorrer archivos Excel
+                extensos con grandes volúmenes de datos.
 
-        Permite consultar la información de manera ágil y ordenada, facilitando la búsqueda de productos,
-        estados de política y fechas relevantes sin necesidad de realizar procesos manuales repetitivos.
+                Permite consultar la información de manera ágil y ordenada, facilitando la búsqueda de productos,
+                estados de política y fechas relevantes sin necesidad de realizar procesos manuales repetitivos.
 
-        Su finalidad es apoyar el trabajo diario, mejorar la eficiencia operativa y optimizar la experiencia
-        del usuario al acceder a la información necesaria de forma práctica y clara.
+                Su finalidad es apoyar el trabajo diario, mejorar la eficiencia operativa y optimizar la experiencia
+                del usuario al acceder a la información necesaria de forma práctica y clara.
 
-        <br><br>
-        <span style="font-size:12px; color:#666;">
-            Desarrollo realizado como herramienta de apoyo para la consulta y organización de información.
-        </span>
-    </p>
+                <br><br>
+                <span style="font-size:12px; color:#666;">
+                    Desarrollo realizado como herramienta de apoyo para la consulta y organización de información.
+                </span>
+            </p>
 
-</div>
+        </div>
     </div>
 
     <!-- APLICACIÓN PRINCIPAL -->
@@ -79,7 +82,10 @@
                     <div class="col">
                         <h2 class="app-title m-0">🏥🩺🏥🧑‍⚕️GESTOR DE CANJES TECNICOS FARMACIA 🏥🩺🏥🧑‍⚕️</h2>
                     </div>
-                    <div class="col-auto">
+                    <div class="col-auto d-flex gap-2">
+                        <button id="btnBoletaManualHeader" class="btn btn-sm btn-success shadow-sm" type="button" style="background: linear-gradient(135deg, #10b981, #059669); border: none;">
+                            <i class="fas fa-cash-register me-1"></i> Realizar Boleta Manual
+                        </button>
                         <button id="btnVolverInicio" class="btn btn-sm btn-outline-secondary" type="button">
                             <i class="fas fa-arrow-left"></i> Volver al inicio
                         </button>
@@ -93,11 +99,14 @@
             <!-- Info del archivo -->
             <div class="row mb-3">
                 <div class="col-md-8">
-                 <h4 id="labelArchivo" class="fw-bold" style="color: #075ec2; font-size: 14px;">
-    Archivo cargado: politicas_devolucion.xlsx
-</h4>
+                    <h4 id="labelArchivo" class="fw-bold" style="color: #075ec2; font-size: 14px;">
+                        Archivo cargado: politicas_devolucion.xlsx
+                    </h4>
                 </div>
-                <div class="col-md-4 text-end">
+                <div class="col-md-4 text-end d-flex justify-content-end gap-2">
+                    <button id="btnBoletaManualBarra" class="btn btn-sm btn-success shadow-sm" type="button" style="background: linear-gradient(135deg, #10b981, #059669); border: none;">
+                        <i class="fas fa-receipt me-1"></i> Boleta Manual
+                    </button>
                     <button id="btnCambiarArchivo" class="btn btn-inkafarma-outline" type="button">
                         <i class="fas fa-file-excel"></i> Cambiar archivo de políticas
                     </button>
@@ -106,7 +115,8 @@
 
             <!-- FORMULARIO DE CANJE -->
             <div class="form-container">
-                <h5 class="mb-3"><i class="fas fa-clipboard-list"></i> Formulario de Canje [F1] Seleccionar automática el buscador</h5>
+                <h5 class="mb-3"><i class="fas fa-clipboard-list"></i> Formulario de Canje [F1] Seleccionar automática
+                    el buscador</h5>
 
                 <div class="row mb-3">
                     <div class="col-md-6">
@@ -139,7 +149,7 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">📋 ESTADO:</label>
-                        
+
                         <input type="text" id="labelEstado" class="form-control readonly-field" readonly>
                     </div>
                 </div>
@@ -153,13 +163,15 @@
 
                 <div class="row mb-3">
                     <div class="col-12">
-                        <button id="btnToggleLote" class="btn btn-danger w-100" type="button">🔴 Producto probablemente nuevo. Sin datos de lote,Consulte al DT por seguridad. </button>
+                        <button id="btnToggleLote" class="btn btn-danger w-100" type="button">🔴 Sin información de lote
+                            (F2) Verifica productos sin fecha vencimiento por lote</button>
                     </div>
                 </div>
 
                 <!-- Información de Lote y Vida Útil (JSON) -->
 
-                <div id="panelLote" class="row mb-3" style="display:none !important; visibility:hidden !important; height:0 !important; overflow:hidden !important;">
+                <div id="panelLote" class="row mb-3"
+                    style="display:none !important; visibility:hidden !important; height:0 !important; overflow:hidden !important;">
                     <div class="col-md-12">
                         <div class="p-3 border rounded shadow-sm"
                             style="background-color: #fff9f5; border-color: #fee3d0 !important;">
@@ -193,151 +205,149 @@
                     </div>
                 </div>
 
-                </div>
+            </div>
 
-                <!-- Botón Copiar Ficha del Producto -->
-                <div class="row mb-3">
-                    <div class="col-12 text-center">
-                        <button id="btnCopiarFicha" class="btn btn-primary btn-lg w-100" type="button"
-                            style="background: linear-gradient(45deg, #1e3a5f, #2c5282); border: none; font-weight: bold;">
-                            <i class="fas fa-copy me-2"></i> COPIAR FICHA DEL PRODUCTO (MEDICAMENTO / DERMO / BEBÉS)
-                        </button>
-                    </div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-3">
-                        <label class="form-label" for="inputFecha">📅 F-V (ejemplo: 0526=05/2026):</label>
-                        <input type="text" id="inputFecha" class="form-control" placeholder="MMAA">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label" for="inputResponsable">👤 Responsable:</label>
-                        <input type="text" id="inputResponsable" class="form-control"
-                            placeholder="Nombre del responsable">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">🔢 Entero (E):</label>
-                        <input type="number" id="inputEntero" class="form-control" placeholder="0" value="0">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">🔢 Fracción (F):</label>
-                        <input type="number" id="inputFraccion" class="form-control" placeholder="0" value="0">
-                    </div>
-                </div>
-
-                <div class="text-end">
-                    <button id="btnGuardar" class="btn btn-inkafarma" type="button">
-                        <i class="fas fa-save"></i> GUARDAR
+            <!-- Botón Copiar Ficha del Producto -->
+            <div class="row mb-3">
+                <div class="col-12 text-center">
+                    <button id="btnCopiarFicha" class="btn btn-primary btn-lg w-100" type="button"
+                        style="background: linear-gradient(45deg, #1e3a5f, #2c5282); border: none; font-weight: bold;">
+                        <i class="fas fa-copy me-2"></i> COPIAR FICHA DEL PRODUCTO (MEDICAMENTO / DERMO / BEBÉS)
                     </button>
                 </div>
             </div>
 
-            <!-- FILTROS -->
-            <div class="form-container">
-                <h5 class="mb-3"><i class="fas fa-filter"></i> Filtros rápidos</h5>
-
-                <div class="row mb-3">
-                    <div class="col-md-4 mb-2">
-                        <div class="input-group">
-                            <span class="input-group-text">COD_POSU</span>
-                            <input type="text" id="filtroCodigoPosu" class="form-control"
-                                placeholder="Buscar por código">
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-2">
-                        <div class="input-group">
-                            <span class="input-group-text">Estado</span>
-                            <select id="filtroEstado" class="form-select">
-                                <option value="">Todos</option>
-                                <option value="TIENE POLÍTICA">POLÍTICA REGULAR</option>
-                                <option value="NO TIENE POLÍTICA">NO TIENE POLÍTICA</option>
-                                <option value="POLÍTICA EXCEPCIONAL">POLÍTICA EXCEPCIONAL</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-2">
-                        <div class="input-group">
-                            <span class="input-group-text">Laboratorio</span>
-                            <input type="text" id="filtroLaboratorio" class="form-control"
-                                placeholder="Buscar por laboratorio">
-                        </div>
-                    </div>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label class="form-label" for="inputFecha">📅 F-V (ejemplo: 0526=05/2026):</label>
+                    <input type="text" id="inputFecha" class="form-control" placeholder="MMAA">
                 </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-4 mb-2">
-                        <div class="input-group">
-                            <span class="input-group-text">Fecha (MM/AAAA)</span>
-                            <input type="text" id="filtroFecha" class="form-control" placeholder="MMAA">
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-2">
-                        <div class="input-group">
-                            <span class="input-group-text">Urgente (MM/AAAA)</span>
-                            <input type="text" id="filtroUrgente" class="form-control" placeholder="MMAA">
-                        </div>
-                    </div>
-                    <div class="col-md-4 text-end align-self-end">
-                        <button id="btnAplicarFiltro" class="btn btn-inkafarma me-2" type="button">
-                            <i class="fas fa-search"></i> Aplicar filtros
-                        </button>
-                        <button id="btnLimpiarFiltros" class="btn btn-outline-secondary" type="button">
-                            <i class="fas fa-redo"></i> Limpiar filtros
-                        </button>
-                    </div>
+                <div class="col-md-3">
+                    <label class="form-label" for="inputResponsable">👤 Responsable:</label>
+                    <input type="text" id="inputResponsable" class="form-control" placeholder="Nombre del responsable">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">🔢 Entero (E):</label>
+                    <input type="number" id="inputEntero" class="form-control" placeholder="0" value="0">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">🔢 Fracción (F):</label>
+                    <input type="number" id="inputFraccion" class="form-control" placeholder="0" value="0">
                 </div>
             </div>
 
-            <!-- TABLA -->
-            <div class="table-container">
-                <h5 class="mb-3"><i class="fas fa-table"></i> Productos agregados</h5>
-
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <button class="btn btn-danger" id="btnEliminarTodo">
-                            <i class="fas fa-trash-alt"></i> Eliminar todo
-                        </button>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button id="btnExportarPdf" class="btn btn-inkafarma" type="button">
-                            <i class="fas fa-file-pdf"></i> Exportar PDF
-                        </button>
-                        <button id="btnExportarExcel" class="btn btn-inkafarma" type="button">
-                            <i class="fas fa-file-excel"></i> Exportar Excel
-                        </button>
-                    </div>
-                </div>
-
-                <div class="table-responsive">
-                    <table id="productosTable" class="table table-striped table-hover">
-                        <thead>
-                            <tr>
-                                <th>RESPONSABLE</th>
-                                <th>COD_POSU</th>
-                                <th>DESCRIPCION</th>
-                                <th>LABORATORIO</th>
-                                <th>ESTADO</th>
-                                <th>F-V</th>
-                                <th>E</th>
-                                <th>F</th>
-                                <th>URGENTE</th>
-                                <th>ACCIONES</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="d-flex justify-content-center gap-2 my-4">
-                <button id="btnExportarPdf2" class="btn btn-inkafarma" type="button">
-                    <i class="fas fa-file-pdf"></i> Exportar PDF
-                </button>
-                <button id="btnExportarExcel2" class="btn btn-inkafarma" type="button">
-                    <i class="fas fa-file-excel"></i> Exportar Excel
+            <div class="text-end">
+                <button id="btnGuardar" class="btn btn-inkafarma" type="button">
+                    <i class="fas fa-save"></i> GUARDAR
                 </button>
             </div>
         </div>
+
+        <!-- FILTROS -->
+        <div class="form-container">
+            <h5 class="mb-3"><i class="fas fa-filter"></i> Filtros rápidos</h5>
+
+            <div class="row mb-3">
+                <div class="col-md-4 mb-2">
+                    <div class="input-group">
+                        <span class="input-group-text">COD_POSU</span>
+                        <input type="text" id="filtroCodigoPosu" class="form-control" placeholder="Buscar por código">
+                    </div>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <div class="input-group">
+                        <span class="input-group-text">Estado</span>
+                        <select id="filtroEstado" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="TIENE POLÍTICA">POLÍTICA REGULAR</option>
+                            <option value="NO TIENE POLÍTICA">NO TIENE POLÍTICA</option>
+                            <option value="POLÍTICA EXCEPCIONAL">POLÍTICA EXCEPCIONAL</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <div class="input-group">
+                        <span class="input-group-text">Laboratorio</span>
+                        <input type="text" id="filtroLaboratorio" class="form-control"
+                            placeholder="Buscar por laboratorio">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4 mb-2">
+                    <div class="input-group">
+                        <span class="input-group-text">Fecha (MM/AAAA)</span>
+                        <input type="text" id="filtroFecha" class="form-control" placeholder="MMAA">
+                    </div>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <div class="input-group">
+                        <span class="input-group-text">Urgente (MM/AAAA)</span>
+                        <input type="text" id="filtroUrgente" class="form-control" placeholder="MMAA">
+                    </div>
+                </div>
+                <div class="col-md-4 text-end align-self-end">
+                    <button id="btnAplicarFiltro" class="btn btn-inkafarma me-2" type="button">
+                        <i class="fas fa-search"></i> Aplicar filtros
+                    </button>
+                    <button id="btnLimpiarFiltros" class="btn btn-outline-secondary" type="button">
+                        <i class="fas fa-redo"></i> Limpiar filtros
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA -->
+        <div class="table-container">
+            <h5 class="mb-3"><i class="fas fa-table"></i> Productos agregados</h5>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <button class="btn btn-danger" id="btnEliminarTodo">
+                        <i class="fas fa-trash-alt"></i> Eliminar todo
+                    </button>
+                </div>
+                <div class="d-flex gap-2">
+                    <button id="btnExportarPdf" class="btn btn-inkafarma" type="button">
+                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                    </button>
+                    <button id="btnExportarExcel" class="btn btn-inkafarma" type="button">
+                        <i class="fas fa-file-excel"></i> Exportar Excel
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table id="productosTable" class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>RESPONSABLE</th>
+                            <th>COD_POSU</th>
+                            <th>DESCRIPCION</th>
+                            <th>LABORATORIO</th>
+                            <th>ESTADO</th>
+                            <th>F-V</th>
+                            <th>E</th>
+                            <th>F</th>
+                            <th>URGENTE</th>
+                            <th>ACCIONES</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-center gap-2 my-4">
+            <button id="btnExportarPdf2" class="btn btn-inkafarma" type="button">
+                <i class="fas fa-file-pdf"></i> Exportar PDF
+            </button>
+            <button id="btnExportarExcel2" class="btn btn-inkafarma" type="button">
+                <i class="fas fa-file-excel"></i> Exportar Excel
+            </button>
+        </div>
+    </div>
     </div>
 
     <!-- MODAL: Cargar archivo -->
@@ -441,6 +451,201 @@
         </div>
     </div>
 
+    <!-- MODAL: REALIZAR BOLETA MANUAL (PUNTO DE VENTA) -->
+    <div class="modal fade" id="modalBoletaManual" tabindex="-1" aria-labelledby="modalBoletaManualLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header text-white" style="background: linear-gradient(135deg, #0d6efd, #0b5ed7);">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-circle bg-white text-primary d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; font-size: 1.1rem;">
+                            <i class="fas fa-cash-register"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold mb-0" id="modalBoletaManualLabel">Realizar Boleta Manual</h5>
+                            <small class="text-white-50">Punto de Venta / Canje: Suma de costos y cálculo de diferencia en soles</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span id="badgeBoletaArchivo" class="badge bg-light text-dark px-2 py-1 shadow-sm" style="font-size: 0.75rem;">
+                            <i class="fas fa-file-excel text-success me-1"></i> <span id="textBoletaArchivo">Sin Excel cargado</span>
+                        </span>
+                        <button type="button" id="btnBoletaCargarExcel" class="btn btn-sm btn-outline-light" title="Cargar archivo Excel de políticas">
+                            <i class="fas fa-upload me-1"></i> Cargar Excel
+                        </button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
+
+                <div class="modal-body p-4" style="background-color: #f8fafc;">
+                    <!-- Buscador de Producto -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-body p-3">
+                            <label class="form-label fw-bold text-secondary mb-1" for="boletaInputCodigo">
+                                <i class="fas fa-barcode text-primary me-1"></i> BUSCAR PRODUCTO POR CÓDIGO POSU O EAN (Desde el Excel):
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                                <input type="text" id="boletaInputCodigo" class="form-control" placeholder="Ingresa o escanea código POSU o EAN y presiona Enter o Buscar">
+                                <button id="btnBoletaBuscar" class="btn btn-primary fw-bold" type="button">
+                                    <i class="fas fa-search me-1"></i> Buscar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulario de 4 campos requeridos por el usuario -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-body p-3">
+                            <div class="row g-3">
+                                <!-- 1. DESCRIPCIÓN -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold text-dark mb-1" for="boletaDescripcion">
+                                        📄 DESCRIPCIÓN:
+                                    </label>
+                                    <input type="text" id="boletaDescripcion" class="form-control" placeholder="Descripción del producto (se llena al buscar o manual)">
+                                </div>
+
+                                <!-- 2. LABORATORIO -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold text-dark mb-1" for="boletaLab">
+                                        🏢 LABORATORIO:
+                                    </label>
+                                    <input type="text" id="boletaLab" class="form-control" placeholder="Laboratorio (se llena al buscar o manual)">
+                                </div>
+
+                                <!-- 3. PROCEDE POR LIF -> Ahora es: BLÍSTER O CAJA -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold text-dark mb-1" for="boletaPresentacion">
+                                        📦 PRESENTACIÓN (Blíster o Caja):
+                                    </label>
+                                    <select id="boletaPresentacion" class="form-select fw-bold text-primary">
+                                        <option value="CAJA">CAJA</option>
+                                        <option value="BLÍSTER">BLÍSTER</option>
+                                    </select>
+                                </div>
+
+                                <!-- 4. ESTADO -> Ahora es: COSTO MANUAL (Solo números) -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold text-dark mb-1" for="boletaCosto">
+                                        💰 COSTO (S/.): <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text fw-bold bg-light">S/</span>
+                                        <input type="text" id="boletaCosto" class="form-control fw-bold" placeholder="0.00" inputmode="decimal">
+                                    </div>
+                                    <small class="text-muted" style="font-size: 0.75rem;">Solo se aceptan números y punto decimal.</small>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-2 mt-3">
+                                <button type="button" id="btnBoletaLimpiarCampos" class="btn btn-outline-secondary">
+                                    <i class="fas fa-eraser me-1"></i> Limpiar Campos
+                                </button>
+                                <button type="button" id="btnBoletaAgregar" class="btn btn-success fw-bold px-4 shadow-sm" style="background: linear-gradient(135deg, #10b981, #059669); border: none;">
+                                    <i class="fas fa-plus-circle me-1"></i> Agregar a la Boleta
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de productos agregados a la boleta -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 fw-bold text-dark">
+                                <i class="fas fa-list-ol text-primary me-2"></i> Productos en la Boleta (<span id="boletaTotalItems">0</span>)
+                            </h6>
+                            <button type="button" id="btnBoletaVaciar" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-trash-alt me-1"></i> Vaciar Boleta
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 260px;">
+                                <table id="boletaTable" class="table table-hover table-striped align-middle mb-0 text-center">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th style="width: 50px;">#</th>
+                                            <th class="text-start">DESCRIPCIÓN</th>
+                                            <th class="text-start">LABORATORIO</th>
+                                            <th style="width: 130px;">PRESENTACIÓN</th>
+                                            <th style="width: 130px;">COSTO (S/.)</th>
+                                            <th style="width: 80px;">ACCIÓN</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="boletaTableBody">
+                                        <tr>
+                                            <td colspan="6" class="text-muted py-4">
+                                                <i class="fas fa-info-circle me-1"></i> No se han agregado productos a la boleta aún.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel Punto de Venta: Totales y Diferencia en Soles -->
+                    <div class="card border-0 shadow-sm" style="background: #ffffff;">
+                        <div class="card-body p-3">
+                            <div class="row align-items-center g-3">
+                                <!-- Suma de Costos -->
+                                <div class="col-md-4">
+                                    <div class="p-3 rounded border text-center shadow-sm" style="background-color: #f1f5f9; border-color: #cbd5e1 !important;">
+                                        <div class="text-muted small fw-bold text-uppercase">
+                                            <i class="fas fa-calculator me-1"></i> Suma Total de Costos
+                                        </div>
+                                        <div class="fs-4 fw-bold text-primary mt-1" id="boletaSumaCostos">S/ 0.00</div>
+                                    </div>
+                                </div>
+                                <!-- Monto del Cliente (ej. 100 soles) -->
+                                <div class="col-md-4">
+                                    <div class="p-3 rounded border shadow-sm" style="background-color: #f8fafc; border-color: #cbd5e1 !important;">
+                                        <label class="form-label small fw-bold text-uppercase text-secondary mb-1" for="boletaMontoCliente">
+                                            <i class="fas fa-hand-holding-usd me-1 text-success"></i> Monto del Cliente (S/.):
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white fw-bold">S/</span>
+                                            <input type="text" id="boletaMontoCliente" class="form-control fw-bold" placeholder="0.00" value="0.00" inputmode="decimal">
+                                        </div>
+                                        <small class="text-muted" style="font-size: 0.72rem;">Ejemplo: Cliente paga con S/ 100.00</small>
+                                    </div>
+                                </div>
+                                <!-- Diferencia en Soles (Calculada automáticamente o manual) -->
+                                <div class="col-md-4">
+                                    <div class="p-3 rounded border text-center shadow-sm" style="background-color: #ecfdf5; border-color: #a7f3d0 !important;">
+                                        <label class="form-label small fw-bold text-uppercase text-success mb-1" for="boletaDiferenciaSoles">
+                                            <i class="fas fa-coins me-1"></i> Diferencia / Vuelto (S/.):
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white fw-bold text-success">S/</span>
+                                            <input type="text" id="boletaDiferenciaSoles" class="form-control fw-bold text-success fs-5 text-center" placeholder="0.00" value="0.00" inputmode="decimal">
+                                        </div>
+                                        <div id="boletaDiferenciaEtiqueta" class="small fw-bold text-success mt-1" style="font-size: 0.72rem;">
+                                            Vuelto a favor del cliente
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light py-2 d-flex justify-content-between">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Cerrar
+                    </button>
+                    <div class="d-flex gap-2">
+                        <button type="button" id="btnImprimirBoletaA4" class="btn btn-outline-primary fw-bold" title="Imprimir en hoja A4 estándar">
+                            <i class="fas fa-file-alt me-1"></i> Formato A4
+                        </button>
+                        <button type="button" id="btnImprimirBoletaPdf" class="btn btn-success fw-bold px-4 shadow-sm" style="background: linear-gradient(135deg, #10b981, #059669); border: none;" title="Imprimir en ticketera térmica NCR de 80mm">
+                            <i class="fas fa-receipt me-1"></i> Imprimir Ticket 80mm (NCR)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts externos -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
@@ -458,53 +663,65 @@
     <script src="app.js"></script>
 
     <div class="modal fade" id="loteInfoModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Información de Lote y Vida Útil <small style="font-size:12px;">(ESC para cerrar)</small></h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="row">
-              <div class="col-md-3"><b>CÓD. POSU GENERAL:</b><p id="modalPosu"></p></div>
-              <div class="col-md-3"><b>PRODUCTO:</b><p id="modalProducto"></p></div>
-              <div class="col-md-3"><b>TIEMPO DE VIDA ÚTIL:</b><p id="modalVida"></p></div>
-              <div class="col-md-3"><b>LECTURA DE LOTE:</b><p id="modalLote"></p></div>
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Información de Lote y Vida Útil <small style="font-size:12px;">(ESC para
+                            cerrar)</small></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-3"><b>CÓD. POSU GENERAL:</b>
+                            <p id="modalPosu"></p>
+                        </div>
+                        <div class="col-md-3"><b>PRODUCTO:</b>
+                            <p id="modalProducto"></p>
+                        </div>
+                        <div class="col-md-3"><b>TIEMPO DE VIDA ÚTIL:</b>
+                            <p id="modalVida"></p>
+                        </div>
+                        <div class="col-md-3"><b>LECTURA DE LOTE:</b>
+                            <p id="modalLote"></p>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
     </div>
-    
-<script>
-let loteInfoModal;
-document.addEventListener('DOMContentLoaded',()=>{
- const el=document.getElementById('loteInfoModal');
- if(el){ loteInfoModal=new bootstrap.Modal(el); }
- document.addEventListener('keydown',function(e){
-   if(e.key==='F2'){
-     e.preventDefault();
-     const btn=document.getElementById('btnToggleLote');
-     if(btn && btn.classList.contains('btn-success')){
-       document.getElementById('modalPosu').textContent=document.getElementById('labelPosuGeneral')?.textContent||'';
-       document.getElementById('modalProducto').textContent=document.getElementById('labelProveedorLote')?.textContent||'';
-       document.getElementById('modalVida').textContent=document.getElementById('labelTiempoVida')?.textContent||'';
-       document.getElementById('modalLote').textContent=document.getElementById('labelLecturaLote')?.textContent||'';
-       loteInfoModal?.show();
-     }
-   }
-   if(e.key==='Escape'){ loteInfoModal?.hide(); }
- });
- const b=document.getElementById('btnToggleLote');
- if(b){ b.onclick=function(){
-   if(this.classList.contains('btn-danger')) return;
-   document.getElementById('modalPosu').textContent=document.getElementById('labelPosuGeneral')?.textContent||'';
-   document.getElementById('modalProducto').textContent=document.getElementById('labelProveedorLote')?.textContent||'';
-   document.getElementById('modalVida').textContent=document.getElementById('labelTiempoVida')?.textContent||'';
-   document.getElementById('modalLote').textContent=document.getElementById('labelLecturaLote')?.textContent||'';
-   loteInfoModal?.show();
- }; }
-});
-</script></body>
+
+    <script>
+        let loteInfoModal;
+        document.addEventListener('DOMContentLoaded', () => {
+            const el = document.getElementById('loteInfoModal');
+            if (el) { loteInfoModal = new bootstrap.Modal(el); }
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'F2') {
+                    e.preventDefault();
+                    const btn = document.getElementById('btnToggleLote');
+                    if (btn && btn.classList.contains('btn-success')) {
+                        document.getElementById('modalPosu').textContent = document.getElementById('labelPosuGeneral')?.textContent || '';
+                        document.getElementById('modalProducto').textContent = document.getElementById('labelProveedorLote')?.textContent || '';
+                        document.getElementById('modalVida').textContent = document.getElementById('labelTiempoVida')?.textContent || '';
+                        document.getElementById('modalLote').textContent = document.getElementById('labelLecturaLote')?.textContent || '';
+                        loteInfoModal?.show();
+                    }
+                }
+                if (e.key === 'Escape') { loteInfoModal?.hide(); }
+            });
+            const b = document.getElementById('btnToggleLote');
+            if (b) {
+                b.onclick = function () {
+                    if (this.classList.contains('btn-danger')) return;
+                    document.getElementById('modalPosu').textContent = document.getElementById('labelPosuGeneral')?.textContent || '';
+                    document.getElementById('modalProducto').textContent = document.getElementById('labelProveedorLote')?.textContent || '';
+                    document.getElementById('modalVida').textContent = document.getElementById('labelTiempoVida')?.textContent || '';
+                    document.getElementById('modalLote').textContent = document.getElementById('labelLecturaLote')?.textContent || '';
+                    loteInfoModal?.show();
+                };
+            }
+        });
+    </script>
+</body>
 
 </html>
