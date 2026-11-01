@@ -110,6 +110,8 @@ function cargarDatosLocales() {
         if (ultimoArchivo) {
             AppState.archivoActual = ultimoArchivo;
             document.getElementById('labelArchivo').textContent = `Archivo cargado: ${ultimoArchivo}`;
+            const textBoleta = document.getElementById('textBoletaArchivo');
+            if (textBoleta) textBoleta.textContent = ultimoArchivo;
         }
 
         if (AppState.itemCounter > 0) {
@@ -127,6 +129,8 @@ function verificarUltimoArchivo() {
         btnUltimoArchivo.textContent = `Usar último archivo: ${ultimoArchivo}`;
         btnUltimoArchivo.classList.remove('d-none');
         document.getElementById('labelArchivo').textContent = `Archivo cargado: ${ultimoArchivo}`;
+        const textBoleta = document.getElementById('textBoletaArchivo');
+        if (textBoleta) textBoleta.textContent = ultimoArchivo;
         return true;
     }
     return false;
@@ -857,6 +861,8 @@ function procesarArchivoExcel(file) {
                 btnUltimoArchivo.textContent = `Usar último archivo: ${AppState.archivoActual}`;
                 btnUltimoArchivo.classList.remove('d-none');
                 document.getElementById('labelArchivo').textContent = `Archivo cargado: ${file.name}`;
+                const textBoleta = document.getElementById('textBoletaArchivo');
+                if (textBoleta) textBoleta.textContent = file.name;
                 localStorage.setItem('ultimoArchivo', file.name);
 
                 fileModal.hide();
@@ -873,6 +879,790 @@ function procesarArchivoExcel(file) {
         }, 100);
     };
     reader.readAsArrayBuffer(file);
+}
+
+// ==================== BOLETA MANUAL (PUNTO DE VENTA) ====================
+
+const BoletaManualState = {
+    items: [],
+    diferenciaEditadaManual: false,
+    modalInstance: null
+};
+
+function sanitizarNumeroDecimal(val) {
+    if (!val) return '';
+    let limpio = val.toString().replace(/,/g, '.').replace(/[^0-9.]/g, '');
+    const partes = limpio.split('.');
+    if (partes.length > 2) {
+        limpio = partes[0] + '.' + partes.slice(1).join('');
+    }
+    return limpio;
+}
+
+function abrirModalBoletaManual() {
+    const textArchivo = document.getElementById('textBoletaArchivo');
+    if (textArchivo) {
+        textArchivo.textContent = AppState.archivoActual ? AppState.archivoActual : 'Sin Excel cargado';
+    }
+
+    if (!BoletaManualState.modalInstance) {
+        const modalEl = document.getElementById('modalBoletaManual');
+        if (modalEl) {
+            BoletaManualState.modalInstance = new bootstrap.Modal(modalEl);
+        }
+    }
+
+    if (BoletaManualState.modalInstance) {
+        BoletaManualState.modalInstance.show();
+        setTimeout(() => {
+            const inputCodigo = document.getElementById('boletaInputCodigo');
+            if (inputCodigo) {
+                inputCodigo.focus();
+                inputCodigo.select();
+            }
+        }, 400);
+    }
+}
+
+function buscarProductoBoleta() {
+    const inputCodigo = document.getElementById('boletaInputCodigo');
+    const codigo = limpiarTexto(inputCodigo.value);
+
+    if (!codigo) {
+        mostrarAlerta('Ingresa un código POSU o EAN para buscar.', 'warning');
+        inputCodigo.focus();
+        return;
+    }
+
+    if (!AppState.productos || AppState.productos.length === 0) {
+        Swal.fire({
+            title: 'Archivo no cargado',
+            text: 'Aún no has cargado el Excel de políticas. ¿Deseas cargarlo ahora o ingresar los datos manualmente?',
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-file-excel me-1"></i> Cargar Excel',
+            cancelButtonText: 'Escribir manual',
+            confirmButtonColor: '#0d6efd',
+            cancelButtonColor: '#6c757d'
+        }).then((res) => {
+            if (res.isConfirmed) {
+                fileModal.show();
+            } else {
+                document.getElementById('boletaDescripcion').focus();
+            }
+        });
+        return;
+    }
+
+    const producto = AppState.productos.find(p =>
+        limpiarTexto(p['COD POSU']) === codigo || limpiarTexto(p['EAN']) === codigo
+    );
+
+    if (!producto) {
+        mostrarAlerta(`No se encontró el producto con código: ${codigo}`, 'error');
+        document.getElementById('boletaDescripcion').focus();
+        return;
+    }
+
+    document.getElementById('boletaDescripcion').value = producto['DESCRIPCION'] || '';
+    document.getElementById('boletaLab').value = producto['LABORATORIO'] || '';
+
+    mostrarAlerta(`Producto: ${producto['DESCRIPCION']}`, 'success');
+
+    const inputCosto = document.getElementById('boletaCosto');
+    inputCosto.focus();
+    inputCosto.select();
+}
+
+function limpiarCamposBoleta() {
+    document.getElementById('boletaInputCodigo').value = '';
+    document.getElementById('boletaDescripcion').value = '';
+    document.getElementById('boletaLab').value = '';
+    document.getElementById('boletaPresentacion').value = 'CAJA';
+    document.getElementById('boletaCosto').value = '';
+    document.getElementById('boletaInputCodigo').focus();
+}
+
+function actualizarTotalesBoleta() {
+    const sumaCostos = BoletaManualState.items.reduce((acc, item) => acc + (parseFloat(item.costo) || 0), 0);
+
+    const labelSuma = document.getElementById('boletaSumaCostos');
+    if (labelSuma) {
+        labelSuma.textContent = `S/ ${sumaCostos.toFixed(2)}`;
+    }
+
+    const badgeTotal = document.getElementById('boletaTotalItems');
+    if (badgeTotal) {
+        badgeTotal.textContent = BoletaManualState.items.length.toString();
+    }
+
+    const inputCliente = document.getElementById('boletaMontoCliente');
+    const montoRaw = (inputCliente ? inputCliente.value : '0').toString().replace(/,/g, '.');
+    const montoCliente = parseFloat(montoRaw) || 0;
+
+    // Calcular diferencia en soles: Monto Cliente - Suma de Costos (Punto de Venta)
+    const diferencia = montoCliente - sumaCostos;
+
+    const inputDiferencia = document.getElementById('boletaDiferenciaSoles');
+    const labelEtiqueta = document.getElementById('boletaDiferenciaEtiqueta');
+
+    if (inputDiferencia && !BoletaManualState.diferenciaEditadaManual) {
+        inputDiferencia.value = diferencia.toFixed(2);
+    }
+
+    if (labelEtiqueta) {
+        if (diferencia > 0) {
+            labelEtiqueta.innerHTML = `<span class="text-success"><i class="fas fa-arrow-down me-1"></i> Vuelto a favor del cliente: S/ ${diferencia.toFixed(2)}</span>`;
+        } else if (diferencia === 0) {
+            labelEtiqueta.innerHTML = `<span class="text-secondary"><i class="fas fa-check me-1"></i> Pago exacto / Sin diferencia</span>`;
+        } else {
+            labelEtiqueta.innerHTML = `<span class="text-danger"><i class="fas fa-arrow-up me-1"></i> Saldo pendiente por cobrar: S/ ${Math.abs(diferencia).toFixed(2)}</span>`;
+        }
+    }
+}
+
+function renderTablaBoleta() {
+    const tbody = document.getElementById('boletaTableBody');
+    if (!tbody) return;
+
+    if (BoletaManualState.items.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-muted py-4">
+                    <i class="fas fa-info-circle me-1"></i> No se han agregado productos a la boleta aún.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = BoletaManualState.items.map((item, index) => {
+        const badgeClass = item.presentacion === 'CAJA' ? 'badge-presentacion-caja' : 'badge-presentacion-blister';
+        const icono = item.presentacion === 'CAJA' ? 'fa-box' : 'fa-tablets';
+        return `
+            <tr>
+                <td class="fw-bold">${index + 1}</td>
+                <td class="text-start fw-bold text-dark">${item.descripcion}</td>
+                <td class="text-start">${item.laboratorio || '-'}</td>
+                <td><span class="${badgeClass}"><i class="fas ${icono} me-1"></i>${item.presentacion}</span></td>
+                <td class="fw-bold text-end pe-3">S/ ${item.costo.toFixed(2)}</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-eliminar-item-boleta" data-id="${item.id}" title="Eliminar ítem">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    tbody.querySelectorAll('.btn-eliminar-item-boleta').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const id = parseInt(this.dataset.id, 10);
+            eliminarItemBoleta(id);
+        });
+    });
+}
+
+function agregarItemBoleta() {
+    const descripcion = document.getElementById('boletaDescripcion').value.trim();
+    const laboratorio = document.getElementById('boletaLab').value.trim();
+    const presentacion = document.getElementById('boletaPresentacion').value;
+    const inputCosto = document.getElementById('boletaCosto');
+    const costoRaw = (inputCosto ? inputCosto.value : '').trim().replace(/,/g, '.');
+    const costoVal = parseFloat(costoRaw);
+
+    if (!descripcion) {
+        mostrarAlerta('Ingresa o busca la descripción del producto.', 'warning');
+        document.getElementById('boletaDescripcion').focus();
+        return;
+    }
+
+    if (isNaN(costoVal) || costoVal < 0) {
+        mostrarAlerta('Ingresa un costo numérico válido mayor o igual a 0.', 'warning');
+        if (inputCosto) inputCosto.focus();
+        return;
+    }
+
+    const nuevoItem = {
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        descripcion: descripcion,
+        laboratorio: laboratorio || '-',
+        presentacion: presentacion, // 'CAJA' o 'BLÍSTER'
+        costo: costoVal
+    };
+
+    BoletaManualState.items.push(nuevoItem);
+    BoletaManualState.diferenciaEditadaManual = false; // re-evalúa la diferencia automáticamente
+
+    renderTablaBoleta();
+    actualizarTotalesBoleta();
+    limpiarCamposBoleta();
+
+    mostrarAlerta('Producto agregado a la boleta', 'success');
+}
+
+function eliminarItemBoleta(id) {
+    BoletaManualState.items = BoletaManualState.items.filter(item => item.id !== id);
+    BoletaManualState.diferenciaEditadaManual = false;
+    renderTablaBoleta();
+    actualizarTotalesBoleta();
+    mostrarAlerta('Producto retirado de la boleta', 'info');
+}
+
+function vaciarBoleta() {
+    if (BoletaManualState.items.length === 0) {
+        mostrarAlerta('La boleta ya está vacía.', 'info');
+        return;
+    }
+
+    Swal.fire({
+        title: '¿Vaciar la boleta?',
+        text: 'Se eliminarán todos los productos agregados a esta boleta.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, vaciar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            BoletaManualState.items = [];
+            BoletaManualState.diferenciaEditadaManual = false;
+            document.getElementById('boletaMontoCliente').value = '0.00';
+            document.getElementById('boletaDiferenciaSoles').value = '0.00';
+            renderTablaBoleta();
+            actualizarTotalesBoleta();
+            limpiarCamposBoleta();
+            mostrarAlerta('Boleta vaciada correctamente', 'success');
+        }
+    });
+}
+
+// ==================== GENERACIÓN DE BOLETA / TICKET ====================
+
+function calcularAlturaTicket80mm(items, archivoNombre) {
+    const printableWidth = 72;
+    const testDoc = new (window.jspdf.jsPDF)({ unit: 'mm', format: [80, 800] });
+    testDoc.setFont('helvetica');
+
+    let y = 6; // margen superior
+    y += 4.5; // FARMACIAS PERUANAS
+    y += 3.8; // GESTOR DE CANJES TECNICOS
+    y += 3.2; // CONTROL OPERATIVO - PUNTO DE VENTA
+    y += 3.5; // BOLETA MANUAL / TICKET DE CANJE
+    y += 3.0; // separador
+    y += 3.5; // TICKET N°
+    y += 3.5; // FECHA / HORA
+    
+    testDoc.setFontSize(7);
+    const archLines = testDoc.splitTextToSize(`POLÍTICA: ${archivoNombre || 'Manual'}`, printableWidth);
+    y += (archLines.length * 3.2) + 1.5;
+
+    y += 3.0; // separador
+    y += 3.5; // Encabezado columnas
+    y += 2.5; // línea sólida
+
+    // Items
+    items.forEach((item, index) => {
+        testDoc.setFontSize(7.5);
+        const itemTitulo = `${index + 1}. ${item.descripcion.toUpperCase()}`;
+        const descLines = testDoc.splitTextToSize(itemTitulo, printableWidth);
+        y += (descLines.length * 3.3);
+
+        testDoc.setFontSize(7);
+        const labText = `[${item.presentacion}] ${item.laboratorio || '-'}`;
+        const labLines = testDoc.splitTextToSize(labText, 48);
+        y += Math.max(labLines.length * 3.0, 3.5) + 1.8;
+    });
+
+    y += 2.0; // separador
+    y += 3.5; // TOTAL PRODUCTOS
+    y += 3.0; // separador
+    y += 4.5; // TOTAL COSTOS
+    y += 4.0; // MONTO CLIENTE
+    y += 2.5; // línea
+    y += 4.5; // DIFERENCIA / VUELTO
+    y += 3.5; // Nota explicativa vuelto / saldo
+    y += 3.5; // separador
+
+    // Firmas
+    y += 4.5; // FIRMAS DE CONFORMIDAD
+    y += 12.0; // Espacio firma DT
+    y += 3.0; // Línea firma DT
+    y += 2.8; // Texto firma DT
+    y += 11.0; // Espacio firma cliente
+    y += 3.0; // Línea firma cliente
+    y += 2.8; // DNI
+    y += 4.0; // separador
+
+    // Pie
+    y += 3.0; // Doc interno
+    y += 2.8; // Sistema Gestor
+    y += 3.0; // Gracias
+    y += 10.0; // Margen para corte de la ticketera NCR
+
+    return Math.max(Math.ceil(y), 130);
+}
+
+function imprimirBoletaTicket80mm() {
+    if (BoletaManualState.items.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Boleta vacía',
+            text: 'Debes agregar al menos un producto a la boleta antes de imprimir el ticket.',
+            confirmButtonColor: '#0d6efd'
+        });
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+
+    const sumaCostos = BoletaManualState.items.reduce((acc, item) => acc + (parseFloat(item.costo) || 0), 0);
+    const montoRaw = (document.getElementById('boletaMontoCliente')?.value || '0').toString().replace(/,/g, '.');
+    const montoCliente = parseFloat(montoRaw) || 0;
+    const difRaw = (document.getElementById('boletaDiferenciaSoles')?.value || '').toString().replace(/,/g, '.');
+    const diferencia = difRaw !== '' ? (parseFloat(difRaw) || 0) : (montoCliente - sumaCostos);
+
+    const ahora = new Date();
+    const fechaStr = ahora.toLocaleDateString('es-PE');
+    const horaStr = ahora.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const correlativo = `BM-${ahora.getFullYear()}${String(ahora.getMonth() + 1).padStart(2, '0')}${String(ahora.getDate()).padStart(2, '0')}-${String(Math.floor(Math.random() * 900) + 100)}`;
+    const archivoNombre = AppState.archivoActual ? AppState.archivoActual : 'Ingreso Manual / Sin archivo';
+
+    // Medidas solicitadas para ticketera térmica NCR:
+    // Ancho papel: 80mm | Ancho útil: 72mm (4mm márgenes) | Alto continuo variable
+    const margin = 4;
+    const printableWidth = 72;
+    const rightMargin = 76;
+    const centerX = 40;
+
+    const alturaTotalMm = calcularAlturaTicket80mm(BoletaManualState.items, archivoNombre);
+
+    const doc = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: [80, alturaTotalMm]
+    });
+
+    function dibujarSeparador(posY, dashed = true) {
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.25);
+        if (dashed) {
+            doc.setLineDashPattern([1.5, 1], 0);
+        } else {
+            doc.setLineDashPattern([], 0);
+        }
+        doc.line(margin, posY, rightMargin, posY);
+        doc.setLineDashPattern([], 0);
+    }
+
+    let curY = 6;
+
+    // === ENCABEZADO TÉRMICO NCR ===
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.5);
+    doc.text('FARMACIAS PERUANAS', centerX, curY, { align: 'center' });
+    curY += 4.5;
+
+    doc.setFontSize(8);
+    doc.text('GESTOR DE CANJES TECNICOS', centerX, curY, { align: 'center' });
+    curY += 3.8;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.text('CONTROL OPERATIVO - PUNTO DE VENTA', centerX, curY, { align: 'center' });
+    curY += 3.5;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text('BOLETA MANUAL / TICKET DE CANJE', centerX, curY, { align: 'center' });
+    curY += 3.0;
+
+    dibujarSeparador(curY, true);
+    curY += 3.5;
+
+    // Datos del Ticket
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.text('TICKET N°:', margin, curY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(correlativo, margin + 17, curY);
+    curY += 3.5;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('FECHA:', margin, curY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(fechaStr, margin + 11, curY);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('HORA:', margin + 37, curY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(horaStr, margin + 46, curY);
+    curY += 3.5;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('POLÍTICA:', margin, curY);
+    doc.setFont('helvetica', 'normal');
+    const archLines = doc.splitTextToSize(archivoNombre, printableWidth - 17);
+    doc.text(archLines, margin + 17, curY);
+    curY += (archLines.length * 3.2) + 1.5;
+
+    dibujarSeparador(curY, true);
+    curY += 3.5;
+
+    // Encabezado de columnas
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.text('CANT / DESCRIPCIÓN', margin, curY);
+    doc.text('COSTO (S/.)', rightMargin, curY, { align: 'right' });
+    curY += 2.0;
+    dibujarSeparador(curY, false); // línea sólida
+    curY += 3.5;
+
+    // Lista de productos
+    BoletaManualState.items.forEach((item, index) => {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        const itemTitulo = `${index + 1}. ${item.descripcion.toUpperCase()}`;
+        const descLines = doc.splitTextToSize(itemTitulo, printableWidth);
+        doc.text(descLines, margin, curY);
+        curY += (descLines.length * 3.3);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        const labText = `[${item.presentacion}] ${item.laboratorio || '-'}`;
+        const labLines = doc.splitTextToSize(labText, 48);
+        doc.text(labLines, margin + 2.5, curY);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.text(`S/ ${item.costo.toFixed(2)}`, rightMargin, curY, { align: 'right' });
+        curY += Math.max(labLines.length * 3.0, 3.5) + 2.0;
+    });
+
+    dibujarSeparador(curY, true);
+    curY += 3.5;
+
+    // Resumen de cantidad
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.text('TOTAL PRODUCTOS:', margin, curY);
+    doc.text(`${BoletaManualState.items.length}`, rightMargin, curY, { align: 'right' });
+    curY += 3.0;
+
+    dibujarSeparador(curY, true);
+    curY += 4.0;
+
+    // === RESUMEN FINANCIERO ===
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.text('TOTAL COSTOS:', margin, curY);
+    doc.text(`S/ ${sumaCostos.toFixed(2)}`, rightMargin, curY, { align: 'right' });
+    curY += 4.5;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text('MONTO DEL CLIENTE:', margin, curY);
+    doc.text(`S/ ${montoCliente.toFixed(2)}`, rightMargin, curY, { align: 'right' });
+    curY += 2.5;
+
+    dibujarSeparador(curY, false); // línea sólida
+    curY += 4.5;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    if (diferencia >= 0) {
+        doc.text('DIFERENCIA / VUELTO:', margin, curY);
+        doc.text(`S/ ${diferencia.toFixed(2)}`, rightMargin, curY, { align: 'right' });
+        curY += 3.5;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.text('(Vuelto a favor del cliente)', margin, curY);
+    } else {
+        doc.text('SALDO POR COBRAR:', margin, curY);
+        doc.text(`S/ ${Math.abs(diferencia).toFixed(2)}`, rightMargin, curY, { align: 'right' });
+        curY += 3.5;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.text('** SALDO PENDIENTE A COBRAR', margin, curY);
+    }
+    curY += 3.5;
+
+    dibujarSeparador(curY, true);
+    curY += 4.5;
+
+    // === FIRMAS DE CONFORMIDAD ===
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.text('FIRMAS DE CONFORMIDAD', centerX, curY, { align: 'center' });
+    curY += 12.0;
+
+    // Firma 1: DT / Farmacéutico
+    doc.setLineWidth(0.25);
+    doc.line(14, curY, 66, curY);
+    curY += 3.0;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.text('ENTREGADO POR / DT', centerX, curY, { align: 'center' });
+    curY += 2.8;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.text('Firma y Sello de Farmacia', centerX, curY, { align: 'center' });
+    curY += 11.0;
+
+    // Firma 2: Cliente
+    doc.line(14, curY, 66, curY);
+    curY += 3.0;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.text('CONFORMIDAD DEL CLIENTE', centerX, curY, { align: 'center' });
+    curY += 2.8;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.text('DNI: _______________________', centerX, curY, { align: 'center' });
+    curY += 4.5;
+
+    dibujarSeparador(curY, true);
+    curY += 3.5;
+
+    // === PIE DEL TICKET ===
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.text('Documento emitido para control interno.', centerX, curY, { align: 'center' });
+    curY += 2.8;
+    doc.text('Sistema Gestor de Canjes - Mifarma / Inkafarma', centerX, curY, { align: 'center' });
+    curY += 3.0;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.text('*** GRACIAS POR SU ATENCIÓN ***', centerX, curY, { align: 'center' });
+    curY += 8.0;
+
+    // Descarga y vista previa
+    const nombrePdf = `Ticket_NCR80mm_${correlativo}_${fechaStr.replace(/\//g, '-')}.pdf`;
+    doc.save(nombrePdf);
+
+    try {
+        const blobUrl = doc.output('bloburl');
+        window.open(blobUrl, '_blank');
+    } catch (e) {
+        console.warn('No se pudo abrir automáticamente en nueva pestaña:', e);
+    }
+
+    Swal.fire({
+        icon: 'success',
+        title: '¡Ticket 80mm Generado!',
+        html: `
+            <div style="font-size: 13.5px; text-align: left;">
+                <p class="mb-1"><strong>Medidas de Ticketera Térmica (NCR POS):</strong></p>
+                <ul class="mb-2 ps-3">
+                    <li>Ancho del papel: <strong>80 mm</strong></li>
+                    <li>Ancho útil de texto: <strong>72 mm</strong> (4 mm margen lateral)</li>
+                    <li>Alto de papel: <strong>Continuo variable (${alturaTotalMm} mm)</strong></li>
+                </ul>
+                <p class="text-muted small mb-0">Se descargó <code>${nombrePdf}</code> y se abrió la vista previa lista para enviar a imprimir a tu ticketera NCR.</p>
+            </div>
+        `,
+        confirmButtonColor: '#10b981'
+    });
+}
+
+// Formato alternativo en Hoja A4 estándar
+function imprimirBoletaA4() {
+    if (BoletaManualState.items.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Boleta vacía',
+            text: 'Debes agregar al menos un producto a la boleta antes de imprimir.',
+            confirmButtonColor: '#0d6efd'
+        });
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    const sumaCostos = BoletaManualState.items.reduce((acc, item) => acc + (parseFloat(item.costo) || 0), 0);
+    const montoRaw = (document.getElementById('boletaMontoCliente')?.value || '0').toString().replace(/,/g, '.');
+    const montoCliente = parseFloat(montoRaw) || 0;
+    const difRaw = (document.getElementById('boletaDiferenciaSoles')?.value || '').toString().replace(/,/g, '.');
+    const diferencia = difRaw !== '' ? (parseFloat(difRaw) || 0) : (montoCliente - sumaCostos);
+
+    const ahora = new Date();
+    const fechaStr = ahora.toLocaleDateString('es-PE');
+    const horaStr = ahora.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const correlativo = `BM-${ahora.getFullYear()}${String(ahora.getMonth() + 1).padStart(2, '0')}${String(ahora.getDate()).padStart(2, '0')}-${String(Math.floor(Math.random() * 900) + 100)}`;
+
+    doc.setFillColor(13, 110, 253);
+    doc.rect(14, 12, pageWidth - 28, 5, 'F');
+
+    doc.setTextColor(15, 23, 42);
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(15);
+    doc.text('FARMACIAS PERUANAS - GESTIÓN DE CANJES', pageWidth / 2, 24, { align: 'center' });
+
+    doc.setFontSize(11);
+    doc.setTextColor(13, 110, 253);
+    doc.text('COMPROBANTE DE CANJE / BOLETA MANUAL', pageWidth / 2, 30, { align: 'center' });
+
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    doc.setFont(undefined, 'normal');
+    doc.text('Control Operativo de Canjes y Devoluciones de Productos Farmacéuticos', pageWidth / 2, 35, { align: 'center' });
+
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.5);
+    doc.line(14, 38, pageWidth - 14, 38);
+
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(14, 41, pageWidth - 28, 16, 2, 2, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(14, 41, pageWidth - 28, 16, 2, 2, 'D');
+
+    doc.setFontSize(8);
+    doc.setTextColor(30, 41, 59);
+
+    doc.setFont(undefined, 'bold');
+    doc.text('N° COMPROBANTE:', 18, 47);
+    doc.setFont(undefined, 'normal');
+    doc.text(correlativo, 50, 47);
+
+    doc.setFont(undefined, 'bold');
+    doc.text('FECHA Y HORA:', 18, 53);
+    doc.setFont(undefined, 'normal');
+    doc.text(`${fechaStr} ${horaStr}`, 50, 53);
+
+    const archivoNombre = AppState.archivoActual ? AppState.archivoActual : 'Ingreso Manual / Sin archivo';
+    doc.setFont(undefined, 'bold');
+    doc.text('ARCHIVO POLÍTICA:', 110, 47);
+    doc.setFont(undefined, 'normal');
+    doc.text(doc.splitTextToSize(archivoNombre, 70), 143, 47);
+
+    doc.setFont(undefined, 'bold');
+    doc.text('TOTAL ÍTEMS:', 110, 53);
+    doc.setFont(undefined, 'normal');
+    doc.text(`${BoletaManualState.items.length} producto(s)`, 143, 53);
+
+    const bodyRows = BoletaManualState.items.map((item, index) => [
+        (index + 1).toString(),
+        item.descripcion.toUpperCase(),
+        (item.laboratorio || '-').toUpperCase(),
+        item.presentacion.toUpperCase(),
+        `S/ ${item.costo.toFixed(2)}`
+    ]);
+
+    doc.autoTable({
+        startY: 61,
+        head: [['N°', 'DESCRIPCIÓN DEL PRODUCTO', 'LABORATORIO', 'PRESENTACIÓN', 'COSTO (S/.)']],
+        body: bodyRows,
+        theme: 'grid',
+        headStyles: {
+            fillColor: [13, 110, 253],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            fontSize: 8.5,
+            halign: 'center',
+            valign: 'middle'
+        },
+        styles: {
+            fontSize: 8,
+            cellPadding: 2,
+            textColor: [30, 41, 59],
+            valign: 'middle'
+        },
+        columnStyles: {
+            0: { cellWidth: 10, halign: 'center' },
+            1: { cellWidth: 80, halign: 'left' },
+            2: { cellWidth: 46, halign: 'left' },
+            3: { cellWidth: 26, halign: 'center' },
+            4: { cellWidth: 20, halign: 'right', fontStyle: 'bold' }
+        },
+        alternateRowStyles: {
+            fillColor: [248, 250, 252]
+        },
+        margin: { left: 14, right: 14 }
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 6;
+    const summaryBoxWidth = 85;
+    const summaryBoxX = pageWidth - 14 - summaryBoxWidth;
+    const summaryBoxY = finalY;
+
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(summaryBoxX, summaryBoxY, summaryBoxWidth, 28, 2, 2, 'F');
+    doc.setDrawColor(203, 213, 225);
+    doc.roundedRect(summaryBoxX, summaryBoxY, summaryBoxWidth, 28, 2, 2, 'D');
+
+    doc.setFontSize(8.5);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(51, 65, 85);
+
+    doc.text('TOTAL COSTOS:', summaryBoxX + 5, summaryBoxY + 7);
+    doc.text(`S/ ${sumaCostos.toFixed(2)}`, summaryBoxX + summaryBoxWidth - 5, summaryBoxY + 7, { align: 'right' });
+
+    doc.text('MONTO DEL CLIENTE:', summaryBoxX + 5, summaryBoxY + 14);
+    doc.text(`S/ ${montoCliente.toFixed(2)}`, summaryBoxX + summaryBoxWidth - 5, summaryBoxY + 14, { align: 'right' });
+
+    doc.setDrawColor(203, 213, 225);
+    doc.line(summaryBoxX + 4, summaryBoxY + 18, summaryBoxX + summaryBoxWidth - 4, summaryBoxY + 18);
+
+    doc.setFontSize(9.5);
+    if (diferencia >= 0) {
+        doc.setTextColor(4, 120, 87);
+        doc.text('DIFERENCIA / VUELTO:', summaryBoxX + 5, summaryBoxY + 24);
+        doc.text(`S/ ${diferencia.toFixed(2)}`, summaryBoxX + summaryBoxWidth - 5, summaryBoxY + 24, { align: 'right' });
+    } else {
+        doc.setTextColor(220, 38, 38);
+        doc.text('SALDO POR COBRAR:', summaryBoxX + 5, summaryBoxY + 24);
+        doc.text(`S/ ${Math.abs(diferencia).toFixed(2)}`, summaryBoxX + summaryBoxWidth - 5, summaryBoxY + 24, { align: 'right' });
+    }
+
+    const firmasY = Math.max(summaryBoxY + 40, finalY + 40);
+    if (firmasY < 265) {
+        doc.setDrawColor(148, 163, 184);
+        doc.setLineWidth(0.5);
+
+        doc.line(25, firmasY, 85, firmasY);
+        doc.setFontSize(8);
+        doc.setTextColor(71, 85, 105);
+        doc.setFont(undefined, 'bold');
+        doc.text('ENTREGADO POR / DT', 55, firmasY + 5, { align: 'center' });
+        doc.setFont(undefined, 'normal');
+        doc.text('Firma y Sello de Farmacia', 55, firmasY + 9, { align: 'center' });
+
+        doc.line(pageWidth - 85, firmasY, pageWidth - 25, firmasY);
+        doc.setFont(undefined, 'bold');
+        doc.text('RECIBIDO / CONFORMIDAD', pageWidth - 55, firmasY + 5, { align: 'center' });
+        doc.setFont(undefined, 'normal');
+        doc.text('DNI / Firma del Cliente', pageWidth - 55, firmasY + 9, { align: 'center' });
+    }
+
+    doc.setFontSize(7);
+    doc.setTextColor(148, 163, 184);
+    doc.text('Documento emitido por el Sistema Gestor de Canjes - Boleta de Control Interno.', pageWidth / 2, 287, { align: 'center' });
+
+    const nombrePdf = `Boleta_A4_${correlativo}_${fechaStr.replace(/\//g, '-')}.pdf`;
+    doc.save(nombrePdf);
+
+    try {
+        const blobUrl = doc.output('bloburl');
+        window.open(blobUrl, '_blank');
+    } catch (e) {
+        console.warn('No se pudo abrir automáticamente en nueva pestaña:', e);
+    }
+
+    Swal.fire({
+        icon: 'success',
+        title: '¡Boleta A4 Generada!',
+        text: `Se descargó "${nombrePdf}" y se abrió la vista previa.`,
+        confirmButtonColor: '#0d6efd'
+    });
+}
+
+// La función principal por defecto genera el Ticket Térmico de 80mm
+function imprimirBoletaPDF() {
+    imprimirBoletaTicket80mm();
 }
 
 // ==================== INICIALIZACIÓN ====================
@@ -892,21 +1682,49 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-
     exportModal = new bootstrap.Modal(document.getElementById('exportModal'));
 
-    document.getElementById('fileModal').addEventListener('hide.bs.modal', function (e) {
-        const fileInput = document.getElementById('fileInput');
-        if (!fileInput.files.length) {
-            e.preventDefault();
-            Swal.fire({
-                icon: 'warning',
-                title: 'Archivo requerido',
-                text: 'Debes seleccionar tu archivo Excel para continuar.',
-                confirmButtonColor: '#009739'
-            });
-        }
-    });
+    const fileModalEl = document.getElementById('fileModal');
+    if (fileModalEl) {
+        // Al abrir: Si ya hay otro modal abierto (como Boleta Manual), elevar z-index del modal y backdrop
+        fileModalEl.addEventListener('show.bs.modal', function () {
+            const modalBoleta = document.getElementById('modalBoletaManual');
+            if (modalBoleta && modalBoleta.classList.contains('show')) {
+                fileModalEl.style.zIndex = '1070';
+                setTimeout(() => {
+                    const backdrops = document.querySelectorAll('.modal-backdrop');
+                    if (backdrops.length > 1) {
+                        backdrops[backdrops.length - 1].style.zIndex = '1065';
+                    }
+                }, 15);
+            }
+        });
+
+        // Al cerrar: Restaurar scroll y estado de modal previo
+        fileModalEl.addEventListener('hidden.bs.modal', function () {
+            fileModalEl.style.zIndex = '';
+            const modalBoleta = document.getElementById('modalBoletaManual');
+            if (modalBoleta && modalBoleta.classList.contains('show')) {
+                document.body.classList.add('modal-open');
+                modalBoleta.focus();
+            }
+        });
+
+        // Validar cierre obligatorio solo si no hay ningún archivo cargado y está en bienvenida
+        fileModalEl.addEventListener('hide.bs.modal', function (e) {
+            const fileInput = document.getElementById('fileInput');
+            const enBienvenida = !document.getElementById('welcomeScreen').classList.contains('d-none');
+            if (enBienvenida && !AppState.archivoActual && (!fileInput || !fileInput.files.length)) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Archivo requerido',
+                    text: 'Debes seleccionar tu archivo Excel para continuar.',
+                    confirmButtonColor: '#009739'
+                });
+            }
+        });
+    }
 
     document.getElementById('btnToggleLote')?.addEventListener('click', togglePanelLote);
 
@@ -1418,11 +2236,73 @@ Brindar información CLARA, SEGURA, PRÁCTICA y basada en evidencia.
     // === PREVENCIÓN DE CIERRE ===
 
     window.addEventListener('beforeunload', function (e) {
-        if (AppState.listaCanjes.length > 0 || AppState.archivoActual) {
+        if (AppState.listaCanjes.length > 0 || AppState.archivoActual || BoletaManualState.items.length > 0) {
             const mensaje = "¿Estás seguro de salir o recargar? Se perderán los datos no guardados.";
             e.preventDefault();
             e.returnValue = mensaje;
             return mensaje;
+        }
+    });
+
+    // === EVENT LISTENERS PARA BOLETA MANUAL ===
+
+    document.getElementById('btnBoletaManualWelcome')?.addEventListener('click', abrirModalBoletaManual);
+    document.getElementById('btnBoletaManualHeader')?.addEventListener('click', abrirModalBoletaManual);
+    document.getElementById('btnBoletaManualBarra')?.addEventListener('click', abrirModalBoletaManual);
+
+    document.getElementById('btnBoletaCargarExcel')?.addEventListener('click', () => {
+        fileModal.show();
+    });
+
+    document.getElementById('btnBoletaBuscar')?.addEventListener('click', buscarProductoBoleta);
+
+    document.getElementById('boletaInputCodigo')?.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            buscarProductoBoleta();
+        }
+    });
+
+    document.getElementById('btnBoletaLimpiarCampos')?.addEventListener('click', limpiarCamposBoleta);
+    document.getElementById('btnBoletaAgregar')?.addEventListener('click', agregarItemBoleta);
+    document.getElementById('btnBoletaVaciar')?.addEventListener('click', vaciarBoleta);
+    document.getElementById('btnImprimirBoletaPdf')?.addEventListener('click', imprimirBoletaPDF);
+    document.getElementById('btnImprimirBoletaA4')?.addEventListener('click', imprimirBoletaA4);
+
+    // Sanitización numérica estricta y cálculo en vivo
+    ['boletaCosto', 'boletaMontoCliente', 'boletaDiferenciaSoles'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', function () {
+                this.value = sanitizarNumeroDecimal(this.value);
+                if (id === 'boletaMontoCliente') {
+                    BoletaManualState.diferenciaEditadaManual = false;
+                    actualizarTotalesBoleta();
+                } else if (id === 'boletaDiferenciaSoles') {
+                    BoletaManualState.diferenciaEditadaManual = true;
+                }
+            });
+        }
+    });
+
+    document.getElementById('boletaDescripcion')?.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('boletaLab')?.focus();
+        }
+    });
+
+    document.getElementById('boletaLab')?.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('boletaCosto')?.focus();
+        }
+    });
+
+    document.getElementById('boletaCosto')?.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            agregarItemBoleta();
         }
     });
 
