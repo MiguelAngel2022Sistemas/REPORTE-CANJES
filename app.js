@@ -899,6 +899,40 @@ function sanitizarNumeroDecimal(val) {
     return limpio;
 }
 
+// Verificación de Excel cargado para Boleta Manual
+function verificarExcelCargadoBoleta(mostrarErrorSiFalta = true) {
+    if (!AppState.productos || AppState.productos.length === 0) {
+        if (mostrarErrorSiFalta) {
+            Swal.fire({
+                icon: 'error',
+                title: '¡Error! Recarga tu Excel',
+                html: `
+                    <div style="font-size: 14.5px; text-align: left;">
+                        <p class="mb-2 text-danger fw-bold">
+                            <i class="fas fa-exclamation-triangle me-1"></i> No se ha cargado el archivo Excel de políticas.
+                        </p>
+                        <p class="mb-2 text-dark">
+                            Debes recargar o insertar tu archivo Excel de políticas de devolución antes de usar las funciones de la Boleta Manual.
+                        </p>
+                        <small class="text-muted d-block">
+                            <i class="fas fa-info-circle me-1"></i> Carga tu archivo para habilitar el buscador, referentes y cálculos de boleta.
+                        </small>
+                    </div>
+                `,
+                confirmButtonText: '<i class="fas fa-file-excel me-1"></i> Cargar Excel Ahora',
+                confirmButtonColor: '#0d6efd',
+                allowOutsideClick: false
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    fileModal.show();
+                }
+            });
+        }
+        return false;
+    }
+    return true;
+}
+
 function abrirModalBoletaManual() {
     const textArchivo = document.getElementById('textBoletaArchivo');
     if (textArchivo) {
@@ -915,57 +949,79 @@ function abrirModalBoletaManual() {
     if (BoletaManualState.modalInstance) {
         BoletaManualState.modalInstance.show();
         setTimeout(() => {
-            const inputCodigo = document.getElementById('boletaInputCodigo');
-            if (inputCodigo) {
-                inputCodigo.focus();
-                inputCodigo.select();
+            // Solo autoenfocar si el Excel ya está cargado para no saltar la alerta antes del clic del usuario
+            if (AppState.productos && AppState.productos.length > 0) {
+                const inputCodigo = document.getElementById('boletaInputCodigo');
+                if (inputCodigo) {
+                    inputCodigo.focus();
+                    inputCodigo.select();
+                }
             }
         }, 400);
     }
 }
 
 function buscarProductoBoleta() {
+    if (!verificarExcelCargadoBoleta(true)) {
+        return;
+    }
+
     const inputCodigo = document.getElementById('boletaInputCodigo');
-    const codigo = limpiarTexto(inputCodigo.value);
+    const codigo = (inputCodigo.value || '').replace(/\D/g, '').trim();
 
     if (!codigo) {
-        mostrarAlerta('Ingresa un código POSU o EAN para buscar.', 'warning');
+        mostrarAlerta('Ingresa un código numérico (POSU o EAN) para buscar.', 'warning');
         inputCodigo.focus();
         return;
     }
 
-    if (!AppState.productos || AppState.productos.length === 0) {
+    let producto = null;
+
+    // Buscar en AppState.productos (Excel de políticas cargado)
+    if (AppState.productos && AppState.productos.length > 0) {
+        producto = AppState.productos.find(p =>
+            limpiarTexto(p['COD POSU']) === codigo || limpiarTexto(p['EAN']) === codigo
+        );
+    }
+
+    if (!producto) {
         Swal.fire({
-            title: 'Archivo no cargado',
-            text: 'Aún no has cargado el Excel de políticas. ¿Deseas cargarlo ahora o ingresar los datos manualmente?',
-            icon: 'info',
-            showCancelButton: true,
-            confirmButtonText: '<i class="fas fa-file-excel me-1"></i> Cargar Excel',
-            cancelButtonText: 'Escribir manual',
-            confirmButtonColor: '#0d6efd',
-            cancelButtonColor: '#6c757d'
-        }).then((res) => {
-            if (res.isConfirmed) {
-                fileModal.show();
-            } else {
-                document.getElementById('boletaDescripcion').focus();
+            icon: 'warning',
+            title: 'Código no encontrado',
+            html: `
+                <div style="text-align: left; font-size: 14.5px;">
+                    <p class="mb-2 text-danger fw-bold" style="font-size: 15px;">
+                        <i class="fas fa-barcode me-1"></i> Error por código de barra.
+                    </p>
+                    <p class="mb-2">
+                        Verificar por código POSU o si no realiza manualmente con la descripción automática.
+                    </p>
+                    <div class="p-2 rounded bg-light border text-muted small mt-2">
+                        <i class="fas fa-info-circle me-1 text-primary"></i> Código buscado: <strong>${codigo}</strong> (no figura en el Excel cargado).
+                    </div>
+                </div>
+            `,
+            confirmButtonText: '<i class="fas fa-edit me-1"></i> Ir a Descripción Automática',
+            confirmButtonColor: '#0d6efd'
+        }).then(() => {
+            const inputDesc = document.getElementById('boletaDescripcion');
+            if (inputDesc) {
+                inputDesc.focus();
+                inputDesc.select();
             }
         });
         return;
     }
 
-    const producto = AppState.productos.find(p =>
-        limpiarTexto(p['COD POSU']) === codigo || limpiarTexto(p['EAN']) === codigo
-    );
-
-    if (!producto) {
-        mostrarAlerta(`No se encontró el producto con código: ${codigo}`, 'error');
-        document.getElementById('boletaDescripcion').focus();
-        return;
-    }
-
     document.getElementById('boletaDescripcion').value = producto['DESCRIPCION'] || '';
     document.getElementById('boletaLab').value = producto['LABORATORIO'] || '';
+
+    // Ocultar sugerencias si estuvieran abiertas
+    const panelSugerencias = document.getElementById('boletaSugerenciasDescripcion');
+    if (panelSugerencias) {
+        panelSugerencias.innerHTML = '';
+        panelSugerencias.classList.add('d-none');
+    }
 
     mostrarAlerta(`Producto: ${producto['DESCRIPCION']}`, 'success');
 
@@ -980,7 +1036,259 @@ function limpiarCamposBoleta() {
     document.getElementById('boletaLab').value = '';
     document.getElementById('boletaPresentacion').value = 'CAJA';
     document.getElementById('boletaCosto').value = '';
+    const panelSugerencias = document.getElementById('boletaSugerenciasDescripcion');
+    if (panelSugerencias) {
+        panelSugerencias.innerHTML = '';
+        panelSugerencias.classList.add('d-none');
+    }
     document.getElementById('boletaInputCodigo').focus();
+}
+
+// Autocompletado de Referentes en Descripción (máximo 3 líneas) con navegación por Flecha Abajo y Enter
+function configurarAutocompletadoDescripcion() {
+    const inputDesc = document.getElementById('boletaDescripcion');
+    const panelSugerencias = document.getElementById('boletaSugerenciasDescripcion');
+    const btnLimpiarDesc = document.getElementById('btnBoletaLimpiarDesc');
+
+    if (!inputDesc || !panelSugerencias) return;
+
+    let resultadosActuales = [];
+    let indiceSeleccionado = -1;
+
+    if (btnLimpiarDesc) {
+        btnLimpiarDesc.addEventListener('click', () => {
+            inputDesc.value = '';
+            panelSugerencias.innerHTML = '';
+            panelSugerencias.classList.add('d-none');
+            resultadosActuales = [];
+            indiceSeleccionado = -1;
+            inputDesc.focus();
+        });
+    }
+
+    function actualizarSeleccionVisual() {
+        const items = panelSugerencias.querySelectorAll('.boleta-sugerencia-item');
+        items.forEach((item, idx) => {
+            if (idx === indiceSeleccionado) {
+                item.classList.add('activa', 'active');
+                item.setAttribute('aria-selected', 'true');
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('activa', 'active');
+                item.removeAttribute('aria-selected');
+            }
+        });
+    }
+
+    function seleccionarSugerencia(idx) {
+        const seleccionado = resultadosActuales[idx];
+        if (!seleccionado) return;
+
+        inputDesc.value = seleccionado.descripcion;
+
+        const inputLab = document.getElementById('boletaLab');
+        if (inputLab) inputLab.value = seleccionado.laboratorio;
+
+        if (seleccionado.codigo) {
+            const inputCod = document.getElementById('boletaInputCodigo');
+            if (inputCod) inputCod.value = seleccionado.codigo;
+        }
+
+        panelSugerencias.innerHTML = '';
+        panelSugerencias.classList.add('d-none');
+        resultadosActuales = [];
+        indiceSeleccionado = -1;
+
+        // Mover foco directamente a costo
+        const inputCosto = document.getElementById('boletaCosto');
+        if (inputCosto) {
+            inputCosto.focus();
+            inputCosto.select();
+        }
+        mostrarAlerta(`Referente seleccionado: ${seleccionado.descripcion}`, 'info');
+    }
+
+    function renderizarSugerencias(resultados) {
+        resultadosActuales = resultados;
+        indiceSeleccionado = -1;
+
+        if (resultados.length === 0) {
+            panelSugerencias.innerHTML = `
+                <div class="p-2 text-center text-muted small bg-white">
+                    <i class="fas fa-info-circle me-1"></i> No se encontraron referentes para "<strong>${inputDesc.value}</strong>". Puedes escribirlo manual.
+                </div>
+            `;
+            panelSugerencias.classList.remove('d-none');
+            return;
+        }
+
+        // Renderizar hasta 3 líneas referentes
+        panelSugerencias.innerHTML = resultados.map((item, index) => `
+            <button type="button" class="list-group-item list-group-item-action boleta-sugerencia-item text-start p-2 border-bottom" data-index="${index}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-dark text-truncate d-block" style="font-size: 0.82rem;">
+                        <i class="fas fa-pills text-primary me-1"></i> ${item.descripcion}
+                    </span>
+                    <span class="badge bg-light text-primary border ms-2" style="font-size: 0.68rem;">
+                        ${item.codigo ? 'Cód: ' + item.codigo : item.origen}
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center text-muted mt-1" style="font-size: 0.72rem;">
+                    <span class="text-truncate" style="max-width: 65%;"><i class="fas fa-industry me-1"></i> ${item.laboratorio}</span>
+                    <span class="badge-sug-normal text-success fw-bold"><i class="fas fa-check-circle me-1"></i> Seleccionar</span>
+                    <span class="badge-sug-enter badge bg-primary text-white"><i class="fas fa-level-down-alt fa-rotate-90 me-1"></i> [Enter] Aceptar</span>
+                </div>
+            </button>
+        `).join('');
+
+        panelSugerencias.classList.remove('d-none');
+
+        // Click y hover en sugerencia
+        panelSugerencias.querySelectorAll('.boleta-sugerencia-item').forEach(btn => {
+            btn.addEventListener('mouseenter', function () {
+                const idx = parseInt(this.dataset.index, 10);
+                indiceSeleccionado = idx;
+                actualizarSeleccionVisual();
+            });
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const idx = parseInt(this.dataset.index, 10);
+                seleccionarSugerencia(idx);
+            });
+        });
+    }
+
+    function buscarReferentes(query) {
+        const q = (query || '').trim().toLowerCase();
+        if (q.length < 2) {
+            panelSugerencias.innerHTML = '';
+            panelSugerencias.classList.add('d-none');
+            resultadosActuales = [];
+            indiceSeleccionado = -1;
+            return;
+        }
+
+        const palabras = q.split(/\s+/).filter(p => p.length > 0);
+        const resultados = [];
+
+        // 1. Buscar primero en AppState.productos (Excel de políticas cargado)
+        if (AppState.productos && AppState.productos.length > 0) {
+            for (const prod of AppState.productos) {
+                const desc = (prod['DESCRIPCION'] || '').toString().toLowerCase();
+                const coincide = palabras.every(palabra => desc.includes(palabra));
+                if (coincide) {
+                    resultados.push({
+                        descripcion: prod['DESCRIPCION'] || '',
+                        laboratorio: prod['LABORATORIO'] || prod['PROVEEDOR'] || 'LABORATORIO',
+                        codigo: (prod['COD POSU'] || prod['EAN'] || '').toString().replace(/\D/g, ''),
+                        origen: 'Excel Políticas'
+                    });
+                    if (resultados.length >= 3) break; // Máximo 3 líneas solicitadas
+                }
+            }
+        }
+
+        // 2. Si no hay suficientes en el Excel o no hay Excel cargado, buscar en la BD local de medicamentos
+        if (resultados.length < 3) {
+            const fuenteLote = (window.datosLoteGlobal && window.datosLoteGlobal.length > 0)
+                ? window.datosLoteGlobal
+                : (AppState.datosLote || []);
+
+            for (const item of fuenteLote) {
+                const prodName = (item['PRODUCTO'] || '').toString().toLowerCase();
+                const coincide = palabras.every(palabra => prodName.includes(palabra));
+                if (coincide) {
+                    const yaExiste = resultados.some(r => r.descripcion.toLowerCase() === prodName);
+                    if (!yaExiste) {
+                        resultados.push({
+                            descripcion: item['PRODUCTO'] || '',
+                            laboratorio: item['PROVEEDOR'] || 'LABORATORIO',
+                            codigo: (item['COD FARMAVENTA'] || '').toString().replace(/\D/g, ''),
+                            origen: 'Medicamentos'
+                        });
+                        if (resultados.length >= 3) break; // Máximo 3 líneas de referentes
+                    }
+                }
+            }
+        }
+
+        renderizarSugerencias(resultados);
+    }
+
+    let debounceTimer;
+    inputDesc.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        const valor = this.value;
+        debounceTimer = setTimeout(() => {
+            buscarReferentes(valor);
+        }, 150);
+    });
+
+    // Navegación por teclado con Flecha Abajo [↓], Flecha Arriba [↑], Enter [↵] y Escape [Esc]
+    inputDesc.addEventListener('keydown', function (e) {
+        const panelAbierto = !panelSugerencias.classList.contains('d-none') && resultadosActuales.length > 0;
+
+        if (e.key === 'ArrowDown') {
+            if (panelAbierto) {
+                e.preventDefault();
+                if (indiceSeleccionado < resultadosActuales.length - 1) {
+                    indiceSeleccionado++;
+                } else {
+                    indiceSeleccionado = 0; // Vuelve al primer elemento
+                }
+                actualizarSeleccionVisual();
+            } else if ((this.value || '').trim().length >= 2) {
+                // Si estaba cerrado pero hay texto suficiente, reabrir sugerencias
+                e.preventDefault();
+                buscarReferentes(this.value);
+            }
+            return;
+        }
+
+        if (e.key === 'ArrowUp') {
+            if (panelAbierto) {
+                e.preventDefault();
+                if (indiceSeleccionado > 0) {
+                    indiceSeleccionado--;
+                } else {
+                    indiceSeleccionado = resultadosActuales.length - 1; // Va al último
+                }
+                actualizarSeleccionVisual();
+            }
+            return;
+        }
+
+        if (e.key === 'Enter') {
+            if (panelAbierto && indiceSeleccionado >= 0 && indiceSeleccionado < resultadosActuales.length) {
+                // Acepta la opción seleccionada con la flecha abajo
+                e.preventDefault();
+                e.stopPropagation();
+                seleccionarSugerencia(indiceSeleccionado);
+                return;
+            } else {
+                // Si no hay opción seleccionada con flecha o el panel está cerrado, pasar al campo LABORATORIO
+                e.preventDefault();
+                panelSugerencias.classList.add('d-none');
+                indiceSeleccionado = -1;
+                document.getElementById('boletaLab')?.focus();
+                return;
+            }
+        }
+
+        if (e.key === 'Escape') {
+            panelSugerencias.classList.add('d-none');
+            indiceSeleccionado = -1;
+            return;
+        }
+    });
+
+    // Cerrar sugerencias al hacer clic fuera
+    document.addEventListener('click', function (e) {
+        if (!inputDesc.contains(e.target) && !panelSugerencias.contains(e.target)) {
+            panelSugerencias.classList.add('d-none');
+            indiceSeleccionado = -1;
+        }
+    });
 }
 
 function actualizarTotalesBoleta() {
@@ -1098,7 +1406,10 @@ function agregarItemBoleta() {
     actualizarTotalesBoleta();
     limpiarCamposBoleta();
 
-    mostrarAlerta('Producto agregado a la boleta', 'success');
+    // Guardar timestamp para permitir impresión inmediata con un segundo Enter
+    window._ultimoEnterTimestampBoleta = Date.now();
+
+    mostrarAlerta('Producto agregado a la boleta. Presiona Enter de nuevo para Imprimir [Doble Enter]', 'success');
 }
 
 function eliminarItemBoleta(id) {
@@ -1109,18 +1420,24 @@ function eliminarItemBoleta(id) {
     mostrarAlerta('Producto retirado de la boleta', 'info');
 }
 
-function vaciarBoleta() {
-    if (BoletaManualState.items.length === 0) {
-        mostrarAlerta('La boleta ya está vacía.', 'info');
+// Vaciar general: boleta + campos del formulario + montos
+function vaciarBoletaGeneral() {
+    const tieneItems = BoletaManualState.items.length > 0;
+    const tieneTextoCampos = (document.getElementById('boletaDescripcion')?.value || '').trim().length > 0 ||
+        (document.getElementById('boletaInputCodigo')?.value || '').trim().length > 0 ||
+        (document.getElementById('boletaCosto')?.value || '').trim().length > 0;
+
+    if (!tieneItems && !tieneTextoCampos) {
+        mostrarAlerta('La boleta y los campos ya están vacíos.', 'info');
         return;
     }
 
     Swal.fire({
-        title: '¿Vaciar la boleta?',
-        text: 'Se eliminarán todos los productos agregados a esta boleta.',
+        title: '¿Vaciar boleta y campos? [Ctrl]',
+        text: 'Se limpiarán todos los datos del formulario y se vaciarán los productos agregados a la boleta.',
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonText: 'Sí, vaciar',
+        confirmButtonText: 'Sí, vaciar todo',
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#d33',
         cancelButtonColor: '#6c757d'
@@ -1128,15 +1445,19 @@ function vaciarBoleta() {
         if (result.isConfirmed) {
             BoletaManualState.items = [];
             BoletaManualState.diferenciaEditadaManual = false;
-            document.getElementById('boletaMontoCliente').value = '0.00';
-            document.getElementById('boletaDiferenciaSoles').value = '0.00';
+            const inputCliente = document.getElementById('boletaMontoCliente');
+            if (inputCliente) inputCliente.value = '0.00';
+            const inputDif = document.getElementById('boletaDiferenciaSoles');
+            if (inputDif) inputDif.value = '0.00';
             renderTablaBoleta();
             actualizarTotalesBoleta();
             limpiarCamposBoleta();
-            mostrarAlerta('Boleta vaciada correctamente', 'success');
+            mostrarAlerta('Boleta y formulario vaciados completamente [Ctrl]', 'success');
         }
     });
 }
+
+const vaciarBoleta = vaciarBoletaGeneral;
 
 // ==================== GENERACIÓN DE BOLETA / TICKET ====================
 
@@ -1150,6 +1471,8 @@ function calcularAlturaTicket80mm(items, archivoNombre) {
     y += 3.8; // GESTOR DE CANJES TECNICOS
     y += 3.2; // CONTROL OPERATIVO - PUNTO DE VENTA
     y += 3.5; // BOLETA MANUAL / TICKET DE CANJE
+    y += 2.5; // separador
+    y += 10.5; // RECUADRO DESTACADO: ENTREGADO / RECIBIDO
     y += 3.0; // separador
     y += 3.5; // TICKET N°
     y += 3.5; // FECHA / HORA
@@ -1187,12 +1510,13 @@ function calcularAlturaTicket80mm(items, archivoNombre) {
 
     // Firmas
     y += 4.5; // FIRMAS DE CONFORMIDAD
-    y += 12.0; // Espacio firma DT
+    y += 11.0; // Espacio firma DT
     y += 3.0; // Línea firma DT
     y += 2.8; // Texto firma DT
-    y += 11.0; // Espacio firma cliente
+    y += 10.0; // Espacio firma cliente
     y += 3.0; // Línea firma cliente
     y += 2.8; // DNI
+    y += 3.5; // Nota informativa copia
     y += 4.0; // separador
 
     // Pie
@@ -1201,48 +1525,15 @@ function calcularAlturaTicket80mm(items, archivoNombre) {
     y += 3.0; // Gracias
     y += 10.0; // Margen para corte de la ticketera NCR
 
-    return Math.max(Math.ceil(y), 130);
+    return Math.max(Math.ceil(y), 145);
 }
 
-function imprimirBoletaTicket80mm() {
-    if (BoletaManualState.items.length === 0) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Boleta vacía',
-            text: 'Debes agregar al menos un producto a la boleta antes de imprimir el ticket.',
-            confirmButtonColor: '#0d6efd'
-        });
-        return;
-    }
-
-    const { jsPDF } = window.jspdf;
-
-    const sumaCostos = BoletaManualState.items.reduce((acc, item) => acc + (parseFloat(item.costo) || 0), 0);
-    const montoRaw = (document.getElementById('boletaMontoCliente')?.value || '0').toString().replace(/,/g, '.');
-    const montoCliente = parseFloat(montoRaw) || 0;
-    const difRaw = (document.getElementById('boletaDiferenciaSoles')?.value || '').toString().replace(/,/g, '.');
-    const diferencia = difRaw !== '' ? (parseFloat(difRaw) || 0) : (montoCliente - sumaCostos);
-
-    const ahora = new Date();
-    const fechaStr = ahora.toLocaleDateString('es-PE');
-    const horaStr = ahora.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const correlativo = `BM-${ahora.getFullYear()}${String(ahora.getMonth() + 1).padStart(2, '0')}${String(ahora.getDate()).padStart(2, '0')}-${String(Math.floor(Math.random() * 900) + 100)}`;
-    const archivoNombre = AppState.archivoActual ? AppState.archivoActual : 'Ingreso Manual / Sin archivo';
-
-    // Medidas solicitadas para ticketera térmica NCR:
-    // Ancho papel: 80mm | Ancho útil: 72mm (4mm márgenes) | Alto continuo variable
+// Función auxiliar para dibujar una copia específica del ticket (ENTREGADO o RECIBIDO)
+function dibujarTicketCopia(doc, tipoCopia, items, info) {
     const margin = 4;
     const printableWidth = 72;
     const rightMargin = 76;
     const centerX = 40;
-
-    const alturaTotalMm = calcularAlturaTicket80mm(BoletaManualState.items, archivoNombre);
-
-    const doc = new jsPDF({
-        orientation: 'p',
-        unit: 'mm',
-        format: [80, alturaTotalMm]
-    });
 
     function dibujarSeparador(posY, dashed = true) {
         doc.setDrawColor(0, 0, 0);
@@ -1280,38 +1571,59 @@ function imprimirBoletaTicket80mm() {
     curY += 3.0;
 
     dibujarSeparador(curY, true);
+    curY += 2.5;
+
+    // === RECUADRO DESTACADO: ENTREGADO vs RECIBIDO ===
+    const esEntregado = tipoCopia === 'ENTREGADO';
+    const tituloCopia = esEntregado ? '*** 1. ENTREGADO ***' : '*** 2. RECIBIDO ***';
+    const descCopia = esEntregado ? '(COPIA PARA EL CLIENTE)' : '(COPIA PARA EL LOCAL / FARMACIA)';
+
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.35);
+    doc.rect(margin, curY, printableWidth, 9.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text(tituloCopia, centerX, curY + 4.2, { align: 'center' });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.text(descCopia, centerX, curY + 7.8, { align: 'center' });
+
+    curY += 11.5;
+    dibujarSeparador(curY, true);
     curY += 3.5;
 
-    // Datos del Ticket
+    // === DATOS DEL TICKET ===
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
     doc.text('TICKET N°:', margin, curY);
     doc.setFont('helvetica', 'normal');
-    doc.text(correlativo, margin + 17, curY);
+    doc.text(info.correlativo, margin + 17, curY);
     curY += 3.5;
 
     doc.setFont('helvetica', 'bold');
     doc.text('FECHA:', margin, curY);
     doc.setFont('helvetica', 'normal');
-    doc.text(fechaStr, margin + 11, curY);
+    doc.text(info.fechaStr, margin + 11, curY);
 
     doc.setFont('helvetica', 'bold');
     doc.text('HORA:', margin + 37, curY);
     doc.setFont('helvetica', 'normal');
-    doc.text(horaStr, margin + 46, curY);
+    doc.text(info.horaStr, margin + 46, curY);
     curY += 3.5;
 
     doc.setFont('helvetica', 'bold');
     doc.text('POLÍTICA:', margin, curY);
     doc.setFont('helvetica', 'normal');
-    const archLines = doc.splitTextToSize(archivoNombre, printableWidth - 17);
+    const archLines = doc.splitTextToSize(info.archivoNombre, printableWidth - 17);
     doc.text(archLines, margin + 17, curY);
     curY += (archLines.length * 3.2) + 1.5;
 
     dibujarSeparador(curY, true);
     curY += 3.5;
 
-    // Encabezado de columnas
+    // === ENCABEZADO DE COLUMNAS ===
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
     doc.text('CANT / DESCRIPCIÓN', margin, curY);
@@ -1320,8 +1632,8 @@ function imprimirBoletaTicket80mm() {
     dibujarSeparador(curY, false); // línea sólida
     curY += 3.5;
 
-    // Lista de productos
-    BoletaManualState.items.forEach((item, index) => {
+    // === LISTA DE PRODUCTOS ===
+    items.forEach((item, index) => {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7.5);
         const itemTitulo = `${index + 1}. ${item.descripcion.toUpperCase()}`;
@@ -1348,7 +1660,7 @@ function imprimirBoletaTicket80mm() {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
     doc.text('TOTAL PRODUCTOS:', margin, curY);
-    doc.text(`${BoletaManualState.items.length}`, rightMargin, curY, { align: 'right' });
+    doc.text(`${items.length}`, rightMargin, curY, { align: 'right' });
     curY += 3.0;
 
     dibujarSeparador(curY, true);
@@ -1358,13 +1670,13 @@ function imprimirBoletaTicket80mm() {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
     doc.text('TOTAL COSTOS:', margin, curY);
-    doc.text(`S/ ${sumaCostos.toFixed(2)}`, rightMargin, curY, { align: 'right' });
+    doc.text(`S/ ${info.sumaCostos.toFixed(2)}`, rightMargin, curY, { align: 'right' });
     curY += 4.5;
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.text('MONTO DEL CLIENTE:', margin, curY);
-    doc.text(`S/ ${montoCliente.toFixed(2)}`, rightMargin, curY, { align: 'right' });
+    doc.text(`S/ ${info.montoCliente.toFixed(2)}`, rightMargin, curY, { align: 'right' });
     curY += 2.5;
 
     dibujarSeparador(curY, false); // línea sólida
@@ -1372,16 +1684,16 @@ function imprimirBoletaTicket80mm() {
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
-    if (diferencia >= 0) {
+    if (info.diferencia >= 0) {
         doc.text('DIFERENCIA / VUELTO:', margin, curY);
-        doc.text(`S/ ${diferencia.toFixed(2)}`, rightMargin, curY, { align: 'right' });
+        doc.text(`S/ ${info.diferencia.toFixed(2)}`, rightMargin, curY, { align: 'right' });
         curY += 3.5;
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7);
         doc.text('(Vuelto a favor del cliente)', margin, curY);
     } else {
         doc.text('SALDO POR COBRAR:', margin, curY);
-        doc.text(`S/ ${Math.abs(diferencia).toFixed(2)}`, rightMargin, curY, { align: 'right' });
+        doc.text(`S/ ${Math.abs(info.diferencia).toFixed(2)}`, rightMargin, curY, { align: 'right' });
         curY += 3.5;
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7);
@@ -1396,7 +1708,7 @@ function imprimirBoletaTicket80mm() {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
     doc.text('FIRMAS DE CONFORMIDAD', centerX, curY, { align: 'center' });
-    curY += 12.0;
+    curY += 11.0;
 
     // Firma 1: DT / Farmacéutico
     doc.setLineWidth(0.25);
@@ -1404,12 +1716,13 @@ function imprimirBoletaTicket80mm() {
     curY += 3.0;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7);
-    doc.text('ENTREGADO POR / DT', centerX, curY, { align: 'center' });
+    const cargoDT = esEntregado ? 'ENTREGADO POR / DT' : 'RECIBIDO EN LOCAL / DT';
+    doc.text(cargoDT, centerX, curY, { align: 'center' });
     curY += 2.8;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.5);
     doc.text('Firma y Sello de Farmacia', centerX, curY, { align: 'center' });
-    curY += 11.0;
+    curY += 10.0;
 
     // Firma 2: Cliente
     doc.line(14, curY, 66, curY);
@@ -1421,7 +1734,14 @@ function imprimirBoletaTicket80mm() {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.5);
     doc.text('DNI: _______________________', centerX, curY, { align: 'center' });
-    curY += 4.5;
+    curY += 3.5;
+
+    // Nota informativa de la copia
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(6.5);
+    const notaCopia = esEntregado ? '* Constancia entregada al cliente.' : '* Constancia para archivo y control del local.';
+    doc.text(notaCopia, centerX, curY, { align: 'center' });
+    curY += 4.0;
 
     dibujarSeparador(curY, true);
     curY += 3.5;
@@ -1437,51 +1757,20 @@ function imprimirBoletaTicket80mm() {
     doc.setFontSize(7);
     doc.text('*** GRACIAS POR SU ATENCIÓN ***', centerX, curY, { align: 'center' });
     curY += 8.0;
-
-    // Descarga y vista previa
-    const nombrePdf = `Ticket_NCR80mm_${correlativo}_${fechaStr.replace(/\//g, '-')}.pdf`;
-    doc.save(nombrePdf);
-
-    try {
-        const blobUrl = doc.output('bloburl');
-        window.open(blobUrl, '_blank');
-    } catch (e) {
-        console.warn('No se pudo abrir automáticamente en nueva pestaña:', e);
-    }
-
-    Swal.fire({
-        icon: 'success',
-        title: '¡Ticket 80mm Generado!',
-        html: `
-            <div style="font-size: 13.5px; text-align: left;">
-                <p class="mb-1"><strong>Medidas de Ticketera Térmica (NCR POS):</strong></p>
-                <ul class="mb-2 ps-3">
-                    <li>Ancho del papel: <strong>80 mm</strong></li>
-                    <li>Ancho útil de texto: <strong>72 mm</strong> (4 mm margen lateral)</li>
-                    <li>Alto de papel: <strong>Continuo variable (${alturaTotalMm} mm)</strong></li>
-                </ul>
-                <p class="text-muted small mb-0">Se descargó <code>${nombrePdf}</code> y se abrió la vista previa lista para enviar a imprimir a tu ticketera NCR.</p>
-            </div>
-        `,
-        confirmButtonColor: '#10b981'
-    });
 }
 
-// Formato alternativo en Hoja A4 estándar
-function imprimirBoletaA4() {
+function imprimirBoletaTicket80mm() {
     if (BoletaManualState.items.length === 0) {
         Swal.fire({
             icon: 'warning',
             title: 'Boleta vacía',
-            text: 'Debes agregar al menos un producto a la boleta antes de imprimir.',
+            text: 'Debes agregar al menos un producto a la boleta antes de imprimir el ticket.',
             confirmButtonColor: '#0d6efd'
         });
         return;
     }
 
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4');
-    const pageWidth = doc.internal.pageSize.getWidth();
 
     const sumaCostos = BoletaManualState.items.reduce((acc, item) => acc + (parseFloat(item.costo) || 0), 0);
     const montoRaw = (document.getElementById('boletaMontoCliente')?.value || '0').toString().replace(/,/g, '.');
@@ -1493,58 +1782,129 @@ function imprimirBoletaA4() {
     const fechaStr = ahora.toLocaleDateString('es-PE');
     const horaStr = ahora.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const correlativo = `BM-${ahora.getFullYear()}${String(ahora.getMonth() + 1).padStart(2, '0')}${String(ahora.getDate()).padStart(2, '0')}-${String(Math.floor(Math.random() * 900) + 100)}`;
+    const archivoNombre = AppState.archivoActual ? AppState.archivoActual : 'Ingreso Manual / Sin archivo';
 
-    doc.setFillColor(13, 110, 253);
+    const alturaTotalMm = calcularAlturaTicket80mm(BoletaManualState.items, archivoNombre);
+
+    const info = {
+        correlativo,
+        fechaStr,
+        horaStr,
+        archivoNombre,
+        sumaCostos,
+        montoCliente,
+        diferencia
+    };
+
+    // Crear documento PDF con 80mm de ancho y altura continua calculada
+    const doc = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: [80, alturaTotalMm]
+    });
+
+    // 1RA BOLETA: ENTREGADO (Para entregar al cliente)
+    dibujarTicketCopia(doc, 'ENTREGADO', BoletaManualState.items, info);
+
+    // 2DA BOLETA: RECIBIDO (Para que lo tenga el local)
+    doc.addPage([80, alturaTotalMm]);
+    dibujarTicketCopia(doc, 'RECIBIDO', BoletaManualState.items, info);
+
+    // Descarga y vista previa
+    const nombrePdf = `Ticket_NCR80mm_2Boletas_${correlativo}_${fechaStr.replace(/\//g, '-')}.pdf`;
+    doc.save(nombrePdf);
+
+    try {
+        const blobUrl = doc.output('bloburl');
+        window.open(blobUrl, '_blank');
+    } catch (e) {
+        console.warn('No se pudo abrir automáticamente en nueva pestaña:', e);
+    }
+
+    Swal.fire({
+        icon: 'success',
+        title: '¡2 Boletas Generadas para Imprimir!',
+        html: `
+            <div style="font-size: 13.5px; text-align: left;">
+                <p class="mb-2">Se generó el documento con <strong>2 Boletas consecutivas con los mismos datos</strong>:</p>
+                <div class="p-2 mb-2 rounded border" style="background-color: #ecfdf5; border-color: #a7f3d0 !important;">
+                    <div class="fw-bold text-success"><i class="fas fa-user-check me-1"></i> 1ra Boleta: ENTREGADO</div>
+                    <small class="text-muted d-block ps-3">Para entregar directamente al cliente.</small>
+                </div>
+                <div class="p-2 mb-2 rounded border" style="background-color: #eff6ff; border-color: #bfdbfe !important;">
+                    <div class="fw-bold text-primary"><i class="fas fa-store me-1"></i> 2da Boleta: RECIBIDO</div>
+                    <small class="text-muted d-block ps-3">Para que la tenga el local (archivo y control interno).</small>
+                </div>
+                <p class="text-muted small mb-0 mt-2">
+                    <i class="fas fa-print me-1"></i> Formato NCR 80mm continuo (${alturaTotalMm} mm c/u). Listo para enviar a tu ticketera térmica.
+                </p>
+            </div>
+        `,
+        confirmButtonColor: '#10b981'
+    });
+}
+
+// Función auxiliar para dibujar una página A4 específica (ENTREGADO o RECIBIDO)
+function dibujarPaginaA4(doc, tipoCopia, items, info) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const esEntregado = tipoCopia === 'ENTREGADO';
+    const colorBarra = esEntregado ? [16, 185, 129] : [13, 110, 253]; // Verde cliente, Azul local
+
+    doc.setFillColor(...colorBarra);
     doc.rect(14, 12, pageWidth - 28, 5, 'F');
 
     doc.setTextColor(15, 23, 42);
     doc.setFont(undefined, 'bold');
     doc.setFontSize(15);
-    doc.text('FARMACIAS PERUANAS - GESTIÓN DE CANJES', pageWidth / 2, 24, { align: 'center' });
+    doc.text('FARMACIAS PERUANAS - GESTIÓN DE CANJES', pageWidth / 2, 23, { align: 'center' });
 
     doc.setFontSize(11);
-    doc.setTextColor(13, 110, 253);
-    doc.text('COMPROBANTE DE CANJE / BOLETA MANUAL', pageWidth / 2, 30, { align: 'center' });
+    doc.setTextColor(...colorBarra);
+    const subtituloCopia = esEntregado ? 'COMPROBANTE DE CANJE / BOLETA MANUAL — [1. ENTREGADO - CLIENTE]' : 'COMPROBANTE DE CANJE / BOLETA MANUAL — [2. RECIBIDO - LOCAL]';
+    doc.text(subtituloCopia, pageWidth / 2, 29, { align: 'center' });
 
     doc.setFontSize(8.5);
     doc.setTextColor(100, 116, 139);
     doc.setFont(undefined, 'normal');
-    doc.text('Control Operativo de Canjes y Devoluciones de Productos Farmacéuticos', pageWidth / 2, 35, { align: 'center' });
+    const notaCopiaA4 = esEntregado ? 'Copia oficial entregada al cliente como constancia de la operación' : 'Copia oficial recibida y archivada para control interno del local / farmacia';
+    doc.text(notaCopiaA4, pageWidth / 2, 34, { align: 'center' });
 
     doc.setDrawColor(203, 213, 225);
     doc.setLineWidth(0.5);
-    doc.line(14, 38, pageWidth - 14, 38);
+    doc.line(14, 37, pageWidth - 14, 37);
 
+    // Caja de metadatos
     doc.setFillColor(248, 250, 252);
-    doc.roundedRect(14, 41, pageWidth - 28, 16, 2, 2, 'F');
+    doc.roundedRect(14, 40, pageWidth - 28, 16, 2, 2, 'F');
     doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(14, 41, pageWidth - 28, 16, 2, 2, 'D');
+    doc.roundedRect(14, 40, pageWidth - 28, 16, 2, 2, 'D');
 
     doc.setFontSize(8);
     doc.setTextColor(30, 41, 59);
 
     doc.setFont(undefined, 'bold');
-    doc.text('N° COMPROBANTE:', 18, 47);
+    doc.text('N° COMPROBANTE:', 18, 46);
     doc.setFont(undefined, 'normal');
-    doc.text(correlativo, 50, 47);
+    doc.text(info.correlativo, 50, 46);
 
     doc.setFont(undefined, 'bold');
-    doc.text('FECHA Y HORA:', 18, 53);
+    doc.text('FECHA Y HORA:', 18, 52);
     doc.setFont(undefined, 'normal');
-    doc.text(`${fechaStr} ${horaStr}`, 50, 53);
-
-    const archivoNombre = AppState.archivoActual ? AppState.archivoActual : 'Ingreso Manual / Sin archivo';
-    doc.setFont(undefined, 'bold');
-    doc.text('ARCHIVO POLÍTICA:', 110, 47);
-    doc.setFont(undefined, 'normal');
-    doc.text(doc.splitTextToSize(archivoNombre, 70), 143, 47);
+    doc.text(`${info.fechaStr} ${info.horaStr}`, 50, 52);
 
     doc.setFont(undefined, 'bold');
-    doc.text('TOTAL ÍTEMS:', 110, 53);
-    doc.setFont(undefined, 'normal');
-    doc.text(`${BoletaManualState.items.length} producto(s)`, 143, 53);
+    doc.text('ESTADO BOLETA:', 110, 46);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(...colorBarra);
+    doc.text(tipoCopia, 143, 46);
 
-    const bodyRows = BoletaManualState.items.map((item, index) => [
+    doc.setTextColor(30, 41, 59);
+    doc.setFont(undefined, 'bold');
+    doc.text('TOTAL ÍTEMS:', 110, 52);
+    doc.setFont(undefined, 'normal');
+    doc.text(`${items.length} producto(s)`, 143, 52);
+
+    const bodyRows = items.map((item, index) => [
         (index + 1).toString(),
         item.descripcion.toUpperCase(),
         (item.laboratorio || '-').toUpperCase(),
@@ -1553,12 +1913,12 @@ function imprimirBoletaA4() {
     ]);
 
     doc.autoTable({
-        startY: 61,
+        startY: 60,
         head: [['N°', 'DESCRIPCIÓN DEL PRODUCTO', 'LABORATORIO', 'PRESENTACIÓN', 'COSTO (S/.)']],
         body: bodyRows,
         theme: 'grid',
         headStyles: {
-            fillColor: [13, 110, 253],
+            fillColor: colorBarra,
             textColor: [255, 255, 255],
             fontStyle: 'bold',
             fontSize: 8.5,
@@ -1599,23 +1959,23 @@ function imprimirBoletaA4() {
     doc.setTextColor(51, 65, 85);
 
     doc.text('TOTAL COSTOS:', summaryBoxX + 5, summaryBoxY + 7);
-    doc.text(`S/ ${sumaCostos.toFixed(2)}`, summaryBoxX + summaryBoxWidth - 5, summaryBoxY + 7, { align: 'right' });
+    doc.text(`S/ ${info.sumaCostos.toFixed(2)}`, summaryBoxX + summaryBoxWidth - 5, summaryBoxY + 7, { align: 'right' });
 
     doc.text('MONTO DEL CLIENTE:', summaryBoxX + 5, summaryBoxY + 14);
-    doc.text(`S/ ${montoCliente.toFixed(2)}`, summaryBoxX + summaryBoxWidth - 5, summaryBoxY + 14, { align: 'right' });
+    doc.text(`S/ ${info.montoCliente.toFixed(2)}`, summaryBoxX + summaryBoxWidth - 5, summaryBoxY + 14, { align: 'right' });
 
     doc.setDrawColor(203, 213, 225);
     doc.line(summaryBoxX + 4, summaryBoxY + 18, summaryBoxX + summaryBoxWidth - 4, summaryBoxY + 18);
 
     doc.setFontSize(9.5);
-    if (diferencia >= 0) {
+    if (info.diferencia >= 0) {
         doc.setTextColor(4, 120, 87);
         doc.text('DIFERENCIA / VUELTO:', summaryBoxX + 5, summaryBoxY + 24);
-        doc.text(`S/ ${diferencia.toFixed(2)}`, summaryBoxX + summaryBoxWidth - 5, summaryBoxY + 24, { align: 'right' });
+        doc.text(`S/ ${info.diferencia.toFixed(2)}`, summaryBoxX + summaryBoxWidth - 5, summaryBoxY + 24, { align: 'right' });
     } else {
         doc.setTextColor(220, 38, 38);
         doc.text('SALDO POR COBRAR:', summaryBoxX + 5, summaryBoxY + 24);
-        doc.text(`S/ ${Math.abs(diferencia).toFixed(2)}`, summaryBoxX + summaryBoxWidth - 5, summaryBoxY + 24, { align: 'right' });
+        doc.text(`S/ ${Math.abs(info.diferencia).toFixed(2)}`, summaryBoxX + summaryBoxWidth - 5, summaryBoxY + 24, { align: 'right' });
     }
 
     const firmasY = Math.max(summaryBoxY + 40, finalY + 40);
@@ -1627,22 +1987,71 @@ function imprimirBoletaA4() {
         doc.setFontSize(8);
         doc.setTextColor(71, 85, 105);
         doc.setFont(undefined, 'bold');
-        doc.text('ENTREGADO POR / DT', 55, firmasY + 5, { align: 'center' });
+        const dtLabel = esEntregado ? 'ENTREGADO POR / DT' : 'RECIBIDO EN LOCAL / DT';
+        doc.text(dtLabel, 55, firmasY + 5, { align: 'center' });
         doc.setFont(undefined, 'normal');
         doc.text('Firma y Sello de Farmacia', 55, firmasY + 9, { align: 'center' });
 
         doc.line(pageWidth - 85, firmasY, pageWidth - 25, firmasY);
         doc.setFont(undefined, 'bold');
-        doc.text('RECIBIDO / CONFORMIDAD', pageWidth - 55, firmasY + 5, { align: 'center' });
+        doc.text('CONFORMIDAD DEL CLIENTE', pageWidth - 55, firmasY + 5, { align: 'center' });
         doc.setFont(undefined, 'normal');
-        doc.text('DNI / Firma del Cliente', pageWidth - 55, firmasY + 9, { align: 'center' });
+        doc.text('DNI: _______________________', pageWidth - 55, firmasY + 9, { align: 'center' });
     }
 
     doc.setFontSize(7);
     doc.setTextColor(148, 163, 184);
-    doc.text('Documento emitido por el Sistema Gestor de Canjes - Boleta de Control Interno.', pageWidth / 2, 287, { align: 'center' });
+    const footerMsg = esEntregado
+        ? 'Boleta de Control Interno — 1ra Copia: ENTREGADO (Cliente) — Sistema Gestor de Canjes.'
+        : 'Boleta de Control Interno — 2da Copia: RECIBIDO (Local) — Sistema Gestor de Canjes.';
+    doc.text(footerMsg, pageWidth / 2, 287, { align: 'center' });
+}
 
-    const nombrePdf = `Boleta_A4_${correlativo}_${fechaStr.replace(/\//g, '-')}.pdf`;
+// Formato alternativo en Hoja A4 estándar (también emite 2 copias: ENTREGADO y RECIBIDO)
+function imprimirBoletaA4() {
+    if (BoletaManualState.items.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Boleta vacía',
+            text: 'Debes agregar al menos un producto a la boleta antes de imprimir.',
+            confirmButtonColor: '#0d6efd'
+        });
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+
+    const sumaCostos = BoletaManualState.items.reduce((acc, item) => acc + (parseFloat(item.costo) || 0), 0);
+    const montoRaw = (document.getElementById('boletaMontoCliente')?.value || '0').toString().replace(/,/g, '.');
+    const montoCliente = parseFloat(montoRaw) || 0;
+    const difRaw = (document.getElementById('boletaDiferenciaSoles')?.value || '').toString().replace(/,/g, '.');
+    const diferencia = difRaw !== '' ? (parseFloat(difRaw) || 0) : (montoCliente - sumaCostos);
+
+    const ahora = new Date();
+    const fechaStr = ahora.toLocaleDateString('es-PE');
+    const horaStr = ahora.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const correlativo = `BM-${ahora.getFullYear()}${String(ahora.getMonth() + 1).padStart(2, '0')}${String(ahora.getDate()).padStart(2, '0')}-${String(Math.floor(Math.random() * 900) + 100)}`;
+    const archivoNombre = AppState.archivoActual ? AppState.archivoActual : 'Ingreso Manual / Sin archivo';
+
+    const info = {
+        correlativo,
+        fechaStr,
+        horaStr,
+        archivoNombre,
+        sumaCostos,
+        montoCliente,
+        diferencia
+    };
+
+    // Página 1: ENTREGADO (Copia Cliente)
+    dibujarPaginaA4(doc, 'ENTREGADO', BoletaManualState.items, info);
+
+    // Página 2: RECIBIDO (Copia Local)
+    doc.addPage('a4', 'p');
+    dibujarPaginaA4(doc, 'RECIBIDO', BoletaManualState.items, info);
+
+    const nombrePdf = `Boleta_A4_2Copias_${correlativo}_${fechaStr.replace(/\//g, '-')}.pdf`;
     doc.save(nombrePdf);
 
     try {
@@ -1654,8 +2063,17 @@ function imprimirBoletaA4() {
 
     Swal.fire({
         icon: 'success',
-        title: '¡Boleta A4 Generada!',
-        text: `Se descargó "${nombrePdf}" y se abrió la vista previa.`,
+        title: '¡Boleta A4 (2 Copias) Generada!',
+        html: `
+            <div style="font-size: 13.5px; text-align: left;">
+                <p class="mb-2">Se generó el PDF en formato A4 con <strong>2 Copias completas</strong>:</p>
+                <ul class="mb-2 ps-3">
+                    <li><strong>Página 1:</strong> ENTREGADO (Para el Cliente)</li>
+                    <li><strong>Página 2:</strong> RECIBIDO (Para el Local)</li>
+                </ul>
+                <p class="text-muted small mb-0">Se descargó <code>${nombrePdf}</code> y se abrió la vista previa.</p>
+            </div>
+        `,
         confirmButtonColor: '#0d6efd'
     });
 }
@@ -2208,30 +2626,93 @@ Brindar información CLARA, SEGURA, PRÁCTICA y basada en evidencia.
     });
 
 
-    // === ATAJO F1 PARA ESCÁNER ===
+    // === SISTEMA DE ATAJOS DE TECLADO POS (F1, Alt, Ctrl, Doble Enter) ===
+    let ctrlStandalone = false;
 
     document.addEventListener('keydown', function (e) {
+        const modalBoleta = document.getElementById('modalBoletaManual');
+        const estaEnBoletaManual = modalBoleta && modalBoleta.classList.contains('show');
+
+        // 1. ATAJO F1: SELECCIONAR BUSCADOR DE CÓDIGO
         if (e.key === 'F1') {
             e.preventDefault();
+            if (estaEnBoletaManual) {
+                if (!verificarExcelCargadoBoleta(true)) {
+                    return;
+                }
+                const inputBoletaCod = document.getElementById('boletaInputCodigo');
+                if (inputBoletaCod) {
+                    inputBoletaCod.focus();
+                    inputBoletaCod.select();
+                    mostrarAlerta('Buscador Boleta Manual [F1]', 'info');
+                }
+            } else {
+                const inputCodigo = document.getElementById('inputCodigo');
+                if (inputCodigo) {
+                    inputCodigo.value = '';
+                    inputCodigo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => {
+                        inputCodigo.focus();
+                        inputCodigo.select();
+                    }, 350);
+                    mostrarAlerta('Listo para escanear producto', 'info');
+                }
+            }
+            return;
+        }
 
-            const inputCodigo = document.getElementById('inputCodigo');
+        // Si no está en Boleta Manual, no interceptar los demás atajos
+        if (!estaEnBoletaManual) return;
 
-            inputCodigo.value = '';
+        // Si no hay Excel cargado en Boleta Manual y pulsa teclas de acción, alertar
+        if (!AppState.productos || AppState.productos.length === 0) {
+            if (e.key === 'Alt' || e.key === 'Control' || e.key === 'Enter') {
+                e.preventDefault();
+                verificarExcelCargadoBoleta(true);
+                return;
+            }
+        }
 
-            inputCodigo.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-            });
+        // 2. ATAJO ALT: LIMPIAR CAMPOS
+        if (e.key === 'Alt') {
+            e.preventDefault();
+            limpiarCamposBoleta();
+            mostrarAlerta('Campos limpiados [Alt]', 'info');
+            return;
+        }
 
-            setTimeout(() => {
-                inputCodigo.focus();
-                inputCodigo.select();
-            }, 350);
+        // 3. TRACKING PARA CTRL (VACIAR BOLETA Y CAMPOS EN GENERAL)
+        if (e.key === 'Control') {
+            ctrlStandalone = true;
+        } else if (e.ctrlKey) {
+            // Si presiona otra tecla mientras Ctrl está presionado (ej. Ctrl+C), no es standalone
+            ctrlStandalone = false;
+        }
 
-            mostrarAlerta('Listo para escanear producto', 'info');
+        // 4. ATAJO DOBLE ENTER: IMPRIMIR TICKET 80mm
+        if (e.key === 'Enter') {
+            const now = Date.now();
+            const diff = now - (window._ultimoEnterTimestampBoleta || 0);
+            if (diff > 0 && diff < 750 && BoletaManualState.items.length > 0) {
+                e.preventDefault();
+                window._ultimoEnterTimestampBoleta = 0;
+                imprimirBoletaPDF();
+                return;
+            }
+            window._ultimoEnterTimestampBoleta = now;
         }
     });
 
+    // Keyup para detectar si la tecla Ctrl fue soltada sola (sin combinación)
+    document.addEventListener('keyup', function (e) {
+        const modalBoleta = document.getElementById('modalBoletaManual');
+        const estaEnBoletaManual = modalBoleta && modalBoleta.classList.contains('show');
+
+        if (estaEnBoletaManual && e.key === 'Control' && ctrlStandalone) {
+            ctrlStandalone = false;
+            vaciarBoletaGeneral();
+        }
+    });
 
     // === PREVENCIÓN DE CIERRE ===
 
@@ -2256,16 +2737,92 @@ Brindar información CLARA, SEGURA, PRÁCTICA y basada en evidencia.
 
     document.getElementById('btnBoletaBuscar')?.addEventListener('click', buscarProductoBoleta);
 
-    document.getElementById('boletaInputCodigo')?.addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
+    // Validación estricta: Solo aceptar números (0-9) en Código POSU o EAN
+    const inputCodigo = document.getElementById('boletaInputCodigo');
+    if (inputCodigo) {
+        inputCodigo.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g, '');
+        });
+        inputCodigo.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                buscarProductoBoleta();
+                return;
+            }
+            if (!/[0-9]/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
+        inputCodigo.addEventListener('paste', function (e) {
             e.preventDefault();
-            buscarProductoBoleta();
+            const textoPegado = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+            const soloNumeros = textoPegado.replace(/\D/g, '');
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            this.value = this.value.substring(0, start) + soloNumeros + this.value.substring(end);
+            this.selectionStart = this.selectionEnd = start + soloNumeros.length;
+        });
+    }
+
+    // Inicializar el autocompletado asistente de referentes para la Descripción
+    configurarAutocompletadoDescripcion();
+
+    // Bloqueo estricto: Si se cliquea o enfoca cualquier cuadrillo sin Excel cargado, exigir recarga de Excel
+    const modalBoletaEl = document.getElementById('modalBoletaManual');
+    if (modalBoletaEl) {
+        // Interceptar cualquier clic dentro del cuerpo de las 2 pantallas (cuadrillos)
+        modalBoletaEl.querySelector('.modal-body')?.addEventListener('click', function (e) {
+            if (!AppState.productos || AppState.productos.length === 0) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (document.activeElement && document.activeElement.blur) {
+                    document.activeElement.blur();
+                }
+                verificarExcelCargadoBoleta(true);
+            }
+        }, true);
+
+        // Interceptar botones de imprimir en el footer si no hay Excel
+        ['btnImprimirBoletaA4', 'btnImprimirBoletaPdf'].forEach(id => {
+            document.getElementById(id)?.addEventListener('click', function (e) {
+                if (!AppState.productos || AppState.productos.length === 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    verificarExcelCargadoBoleta(true);
+                }
+            }, true);
+        });
+    }
+
+    const cuadrillosBoleta = [
+        'boletaInputCodigo', 'btnBoletaBuscar', 'boletaDescripcion', 'btnBoletaLimpiarDesc',
+        'boletaLab', 'boletaPresentacion', 'boletaCosto',
+        'btnBoletaLimpiarCampos', 'btnBoletaAgregar', 'btnBoletaVaciar',
+        'boletaMontoCliente', 'boletaDiferenciaSoles',
+        'btnImprimirBoletaA4', 'btnImprimirBoletaPdf'
+    ];
+
+    cuadrillosBoleta.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('focus', function (e) {
+                if (!verificarExcelCargadoBoleta(true)) {
+                    this.blur();
+                }
+            });
+            el.addEventListener('click', function (e) {
+                if (!verificarExcelCargadoBoleta(true)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.blur();
+                }
+            });
         }
     });
 
     document.getElementById('btnBoletaLimpiarCampos')?.addEventListener('click', limpiarCamposBoleta);
     document.getElementById('btnBoletaAgregar')?.addEventListener('click', agregarItemBoleta);
-    document.getElementById('btnBoletaVaciar')?.addEventListener('click', vaciarBoleta);
+    document.getElementById('btnBoletaVaciar')?.addEventListener('click', vaciarBoletaGeneral);
     document.getElementById('btnImprimirBoletaPdf')?.addEventListener('click', imprimirBoletaPDF);
     document.getElementById('btnImprimirBoletaA4')?.addEventListener('click', imprimirBoletaA4);
 
@@ -2285,12 +2842,6 @@ Brindar información CLARA, SEGURA, PRÁCTICA y basada en evidencia.
         }
     });
 
-    document.getElementById('boletaDescripcion')?.addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            document.getElementById('boletaLab')?.focus();
-        }
-    });
 
     document.getElementById('boletaLab')?.addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
