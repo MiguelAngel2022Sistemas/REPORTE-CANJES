@@ -905,7 +905,7 @@ function verificarExcelCargadoBoleta(mostrarErrorSiFalta = true) {
         if (mostrarErrorSiFalta) {
             Swal.fire({
                 icon: 'error',
-                title: '¡Error! Recarga tu Excel',
+                title: '¡Error! Recarga tu politica de devolucion ',
                 html: `
                     <div style="font-size: 14.5px; text-align: left;">
                         <p class="mb-2 text-danger fw-bold">
@@ -919,7 +919,7 @@ function verificarExcelCargadoBoleta(mostrarErrorSiFalta = true) {
                         </small>
                     </div>
                 `,
-                confirmButtonText: '<i class="fas fa-file-excel me-1"></i> Cargar Excel Ahora',
+                confirmButtonText: '<i class="fas fa-file-excel me-1"></i> Cargar tu politica de devolucion Ahora',
                 confirmButtonColor: '#0d6efd',
                 allowOutsideClick: false
             }).then((res) => {
@@ -1476,7 +1476,7 @@ function calcularAlturaTicket80mm(items, archivoNombre) {
     y += 3.0; // separador
     y += 3.5; // TICKET N°
     y += 3.5; // FECHA / HORA
-    
+
     testDoc.setFontSize(7);
     const archLines = testDoc.splitTextToSize(`POLÍTICA: ${archivoNombre || 'Manual'}`, printableWidth);
     y += (archLines.length * 3.2) + 1.5;
