@@ -465,10 +465,10 @@
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <span id="badgeBoletaArchivo" class="badge bg-light text-dark px-2 py-1 shadow-sm" style="font-size: 0.75rem;">
-                            <i class="fas fa-file-excel text-success me-1"></i> <span id="textBoletaArchivo">Sin politica del Excel cargado</span>
+                            <i class="fas fa-file-excel text-success me-1"></i> <span id="textBoletaArchivo">Sin Excel cargado</span>
                         </span>
                         <button type="button" id="btnBoletaCargarExcel" class="btn btn-sm btn-outline-light" title="Cargar archivo Excel de políticas">
-                            <i class="fas fa-upload me-1"></i> Cargar la politica de devolucion del Excel
+                            <i class="fas fa-upload me-1"></i> Cargar Excel
                         </button>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
@@ -541,9 +541,9 @@
                                             <input type="text" id="boletaLab" class="form-control" placeholder="Laboratorio fabricante">
                                         </div>
 
-                                        <!-- 3 y 4. Presentación y Costo -->
+                                        <!-- 3 y 4. Presentación, Cantidad y Costo -->
                                         <div class="row g-2">
-                                            <div class="col-6">
+                                            <div class="col-4">
                                                 <label class="form-label fw-bold text-dark mb-1" for="boletaPresentacion">
                                                     📦 PRESENTACIÓN:
                                                 </label>
@@ -552,9 +552,19 @@
                                                     <option value="BLÍSTER">BLÍSTER</option>
                                                 </select>
                                             </div>
-                                            <div class="col-6">
+                                            <div class="col-4">
+                                                <label class="form-label fw-bold text-dark mb-1" for="boletaCantidad">
+                                                    🔢 CANTIDAD:
+                                                </label>
+                                                <div class="input-group">
+                                                    <button class="btn btn-outline-secondary px-2 fw-bold" type="button" id="btnBoletaCantMenosForm" title="Restar 1">−</button>
+                                                    <input type="number" id="boletaCantidad" class="form-control text-center fw-bold" value="1" min="1" max="999">
+                                                    <button class="btn btn-outline-secondary px-2 fw-bold" type="button" id="btnBoletaCantMasForm" title="Sumar 1">+</button>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
                                                 <label class="form-label fw-bold text-dark mb-1" for="boletaCosto">
-                                                    💰 COSTO (S/.): <span class="text-danger">*</span>
+                                                    💰 COSTO UNIT. (S/.): <span class="text-danger">*</span>
                                                 </label>
                                                 <div class="input-group">
                                                     <span class="input-group-text fw-bold bg-light">S/</span>
@@ -600,17 +610,18 @@
                                         <table id="boletaTable" class="table table-hover table-striped align-middle mb-0 text-center">
                                             <thead class="table-light sticky-top">
                                                 <tr>
-                                                    <th style="width: 45px;">#</th>
+                                                    <th style="width: 40px;">#</th>
                                                     <th class="text-start">DESCRIPCIÓN</th>
-                                                    <th class="text-start" style="width: 120px;">LABORATORIO</th>
-                                                    <th style="width: 105px;">PRESENTACIÓN</th>
-                                                    <th style="width: 110px;" class="text-end">COSTO (S/.)</th>
-                                                    <th style="width: 55px;">ACCIÓN</th>
+                                                    <th class="text-start" style="width: 115px;">LABORATORIO</th>
+                                                    <th style="width: 95px;">PRESENTACIÓN</th>
+                                                    <th style="width: 110px;">CANTIDAD</th>
+                                                    <th style="width: 105px;" class="text-end">COSTO (S/.)</th>
+                                                    <th style="width: 50px;">ACCIÓN</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="boletaTableBody">
                                                 <tr>
-                                                    <td colspan="6" class="text-muted py-4">
+                                                    <td colspan="7" class="text-muted py-4">
                                                         <i class="fas fa-info-circle me-1"></i> No se han agregado productos a la boleta aún.
                                                     </td>
                                                 </tr>
@@ -645,12 +656,12 @@
                                             </div>
                                             <!-- Diferencia / Vuelto -->
                                             <div class="col-md-4">
-                                                <div class="p-2 rounded text-center border shadow-xs" style="background-color: #ecfdf5; border-color: #a7f3d0 !important;">
-                                                    <label class="form-label small fw-bold text-uppercase text-success mb-1 d-block text-truncate" for="boletaDiferenciaSoles" style="font-size: 0.72rem;">
+                                                <div id="boletaDiferenciaCard" class="p-2 rounded text-center border shadow-xs" style="background-color: #ecfdf5; border-color: #a7f3d0 !important;">
+                                                    <label id="boletaDiferenciaTitulo" class="form-label small fw-bold text-uppercase text-success mb-1 d-block text-truncate" for="boletaDiferenciaSoles" style="font-size: 0.72rem;">
                                                         <i class="fas fa-coins me-1"></i> Diferencia / Vuelto:
                                                     </label>
                                                     <div class="input-group input-group-sm">
-                                                        <span class="input-group-text bg-white fw-bold text-success">S/</span>
+                                                        <span id="boletaDiferenciaMoneda" class="input-group-text bg-white fw-bold text-success">S/</span>
                                                         <input type="text" id="boletaDiferenciaSoles" class="form-control fw-bold text-success fs-6 text-center" placeholder="0.00" value="0.00" inputmode="decimal">
                                                     </div>
                                                     <div id="boletaDiferenciaEtiqueta" class="small fw-bold text-success mt-1 text-truncate" style="font-size: 0.68rem;">
