@@ -921,7 +921,8 @@ function verificarExcelCargadoBoleta(mostrarErrorSiFalta = true) {
                 `,
                 confirmButtonText: '<i class="fas fa-file-excel me-1"></i> Cargar tu politica de devolucion Ahora',
                 confirmButtonColor: '#0d6efd',
-                allowOutsideClick: false
+                showCloseButton: true,
+                allowOutsideClick: true
             }).then((res) => {
                 if (res.isConfirmed) {
                     fileModal.show();
@@ -1035,6 +1036,8 @@ function limpiarCamposBoleta() {
     document.getElementById('boletaDescripcion').value = '';
     document.getElementById('boletaLab').value = '';
     document.getElementById('boletaPresentacion').value = 'CAJA';
+    const inputCant = document.getElementById('boletaCantidad');
+    if (inputCant) inputCant.value = '1';
     document.getElementById('boletaCosto').value = '';
     const panelSugerencias = document.getElementById('boletaSugerenciasDescripcion');
     if (panelSugerencias) {
@@ -1299,9 +1302,10 @@ function actualizarTotalesBoleta() {
         labelSuma.textContent = `S/ ${sumaCostos.toFixed(2)}`;
     }
 
+    const totalUnidades = BoletaManualState.items.reduce((acc, item) => acc + (parseInt(item.cantidad) || 1), 0);
     const badgeTotal = document.getElementById('boletaTotalItems');
     if (badgeTotal) {
-        badgeTotal.textContent = BoletaManualState.items.length.toString();
+        badgeTotal.textContent = totalUnidades.toString();
     }
 
     const inputCliente = document.getElementById('boletaMontoCliente');
@@ -1313,20 +1317,93 @@ function actualizarTotalesBoleta() {
 
     const inputDiferencia = document.getElementById('boletaDiferenciaSoles');
     const labelEtiqueta = document.getElementById('boletaDiferenciaEtiqueta');
+    const cardDiferencia = document.getElementById('boletaDiferenciaCard');
+    const labelTitulo = document.getElementById('boletaDiferenciaTitulo');
+    const spanMoneda = document.getElementById('boletaDiferenciaMoneda');
 
     if (inputDiferencia && !BoletaManualState.diferenciaEditadaManual) {
         inputDiferencia.value = diferencia.toFixed(2);
     }
 
-    if (labelEtiqueta) {
-        if (diferencia > 0) {
-            labelEtiqueta.innerHTML = `<span class="text-success"><i class="fas fa-arrow-down me-1"></i> Vuelto a favor del cliente: S/ ${diferencia.toFixed(2)}</span>`;
-        } else if (diferencia === 0) {
-            labelEtiqueta.innerHTML = `<span class="text-secondary"><i class="fas fa-check me-1"></i> Pago exacto / Sin diferencia</span>`;
-        } else {
-            labelEtiqueta.innerHTML = `<span class="text-danger"><i class="fas fa-arrow-up me-1"></i> Saldo pendiente por cobrar: S/ ${Math.abs(diferencia).toFixed(2)}</span>`;
+    // Si el monto del cliente no supera la suma de costos (diferencia negativa)
+    const esInsuficiente = (sumaCostos > 0 && montoCliente < sumaCostos);
+
+    if (esInsuficiente) {
+        const falta = Math.abs(diferencia).toFixed(2);
+
+        // Estilos visuales de ERROR (Rojo)
+        if (cardDiferencia) {
+            cardDiferencia.style.setProperty('background-color', '#fef2f2', 'important');
+            cardDiferencia.style.setProperty('border-color', '#f87171', 'important');
+        }
+        if (labelTitulo) {
+            labelTitulo.className = 'form-label small fw-bold text-uppercase text-danger mb-1 d-block text-truncate';
+            labelTitulo.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i> ¡Error! Monto Insuficiente:';
+        }
+        if (spanMoneda) {
+            spanMoneda.className = 'input-group-text bg-white fw-bold text-danger border-danger';
+        }
+        if (inputDiferencia) {
+            inputDiferencia.className = 'form-control fw-bold text-danger fs-6 text-center border-danger is-invalid';
+        }
+        if (inputCliente) {
+            inputCliente.classList.add('border-danger', 'is-invalid');
+        }
+        if (labelEtiqueta) {
+            labelEtiqueta.innerHTML = `<span class="text-danger fw-bold"><i class="fas fa-times-circle me-1"></i> Monto insuficiente (Falta S/ ${falta})</span>`;
+        }
+    } else {
+        // Estilos visuales NORMALES (Verde)
+        if (cardDiferencia) {
+            cardDiferencia.style.setProperty('background-color', '#ecfdf5', 'important');
+            cardDiferencia.style.setProperty('border-color', '#a7f3d0', 'important');
+        }
+        if (labelTitulo) {
+            labelTitulo.className = 'form-label small fw-bold text-uppercase text-success mb-1 d-block text-truncate';
+            labelTitulo.innerHTML = '<i class="fas fa-coins me-1"></i> Diferencia / Vuelto:';
+        }
+        if (spanMoneda) {
+            spanMoneda.className = 'input-group-text bg-white fw-bold text-success';
+        }
+        if (inputDiferencia) {
+            inputDiferencia.className = 'form-control fw-bold text-success fs-6 text-center';
+        }
+        if (inputCliente) {
+            inputCliente.classList.remove('border-danger', 'is-invalid');
+        }
+
+        if (labelEtiqueta) {
+            if (diferencia > 0) {
+                labelEtiqueta.innerHTML = `<span class="text-success"><i class="fas fa-arrow-down me-1"></i> Vuelto a favor del cliente: S/ ${diferencia.toFixed(2)}</span>`;
+            } else if (diferencia === 0) {
+                labelEtiqueta.innerHTML = `<span class="text-secondary"><i class="fas fa-check me-1"></i> Pago exacto / Sin diferencia</span>`;
+            } else {
+                labelEtiqueta.innerHTML = `<span class="text-muted"><i class="fas fa-info-circle me-1"></i> Vuelto a favor del cliente</span>`;
+            }
         }
     }
+}
+
+function cambiarCantidadItemBoleta(id, delta) {
+    const item = BoletaManualState.items.find(i => i.id === id);
+    if (!item) return;
+
+    if (!item.costoUnitario) {
+        item.costoUnitario = item.costo / (item.cantidad || 1);
+    }
+
+    const nuevaCant = (parseInt(item.cantidad) || 1) + delta;
+    if (nuevaCant < 1) {
+        // Mínimo 1 unidad (para eliminar se presiona el botón X rojo)
+        return;
+    }
+
+    item.cantidad = nuevaCant;
+    item.costo = item.costoUnitario * nuevaCant;
+    BoletaManualState.diferenciaEditadaManual = false;
+
+    renderTablaBoleta();
+    actualizarTotalesBoleta();
 }
 
 function renderTablaBoleta() {
@@ -1336,7 +1413,7 @@ function renderTablaBoleta() {
     if (BoletaManualState.items.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="6" class="text-muted py-4">
+                <td colspan="7" class="text-muted py-4">
                     <i class="fas fa-info-circle me-1"></i> No se han agregado productos a la boleta aún.
                 </td>
             </tr>
@@ -1347,13 +1424,33 @@ function renderTablaBoleta() {
     tbody.innerHTML = BoletaManualState.items.map((item, index) => {
         const badgeClass = item.presentacion === 'CAJA' ? 'badge-presentacion-caja' : 'badge-presentacion-blister';
         const icono = item.presentacion === 'CAJA' ? 'fa-box' : 'fa-tablets';
+        const cant = parseInt(item.cantidad) || 1;
+        const subtotal = parseFloat(item.costo) || 0;
+        const costoUnit = parseFloat(item.costoUnitario) || (subtotal / cant);
+
         return `
             <tr>
                 <td class="fw-bold">${index + 1}</td>
                 <td class="text-start fw-bold text-dark">${item.descripcion}</td>
                 <td class="text-start">${item.laboratorio || '-'}</td>
                 <td><span class="${badgeClass}"><i class="fas ${icono} me-1"></i>${item.presentacion}</span></td>
-                <td class="fw-bold text-end pe-3">S/ ${item.costo.toFixed(2)}</td>
+                <td>
+                    <div class="d-inline-flex align-items-center border rounded bg-white shadow-xs p-0" style="border-color: #cbd5e1 !important;">
+                        <button type="button" class="btn btn-sm btn-light py-0 px-2 fw-bold text-secondary btn-cant-menos" data-id="${item.id}" title="Disminuir cantidad" style="border: none; border-right: 1px solid #cbd5e1; border-radius: 4px 0 0 4px; line-height: 1.5;">
+                            <i class="fas fa-minus" style="font-size: 0.65rem;"></i>
+                        </button>
+                        <span class="fw-bold px-2 text-primary" style="min-width: 28px; text-align: center; font-size: 0.88rem;">
+                            ${cant}
+                        </span>
+                        <button type="button" class="btn btn-sm btn-light py-0 px-2 fw-bold text-primary btn-cant-mas" data-id="${item.id}" title="Aumentar cantidad" style="border: none; border-left: 1px solid #cbd5e1; border-radius: 0 4px 4px 0; line-height: 1.5;">
+                            <i class="fas fa-plus" style="font-size: 0.65rem;"></i>
+                        </button>
+                    </div>
+                </td>
+                <td class="fw-bold text-end pe-3">
+                    <div>S/ ${subtotal.toFixed(2)}</div>
+                    ${cant > 1 ? `<small class="text-muted fw-normal d-block" style="font-size: 0.68rem;">(${cant} x S/ ${costoUnit.toFixed(2)})</small>` : ''}
+                </td>
                 <td>
                     <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-eliminar-item-boleta" data-id="${item.id}" title="Eliminar ítem">
                         <i class="fas fa-times"></i>
@@ -1363,8 +1460,25 @@ function renderTablaBoleta() {
         `;
     }).join('');
 
+    tbody.querySelectorAll('.btn-cant-mas').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const id = parseInt(this.dataset.id, 10);
+            cambiarCantidadItemBoleta(id, 1);
+        });
+    });
+
+    tbody.querySelectorAll('.btn-cant-menos').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const id = parseInt(this.dataset.id, 10);
+            cambiarCantidadItemBoleta(id, -1);
+        });
+    });
+
     tbody.querySelectorAll('.btn-eliminar-item-boleta').forEach(btn => {
-        btn.addEventListener('click', function () {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
             const id = parseInt(this.dataset.id, 10);
             eliminarItemBoleta(id);
         });
@@ -1379,6 +1493,10 @@ function agregarItemBoleta() {
     const costoRaw = (inputCosto ? inputCosto.value : '').trim().replace(/,/g, '.');
     const costoVal = parseFloat(costoRaw);
 
+    const inputCant = document.getElementById('boletaCantidad');
+    let cantVal = parseInt(inputCant ? inputCant.value : 1, 10);
+    if (isNaN(cantVal) || cantVal < 1) cantVal = 1;
+
     if (!descripcion) {
         mostrarAlerta('Ingresa o busca la descripción del producto.', 'warning');
         document.getElementById('boletaDescripcion').focus();
@@ -1391,15 +1509,31 @@ function agregarItemBoleta() {
         return;
     }
 
-    const nuevoItem = {
-        id: Date.now() + Math.floor(Math.random() * 1000),
-        descripcion: descripcion,
-        laboratorio: laboratorio || '-',
-        presentacion: presentacion, // 'CAJA' o 'BLÍSTER'
-        costo: costoVal
-    };
+    // Si ya existe el producto con la misma presentación en la boleta, sumar la cantidad
+    const existente = BoletaManualState.items.find(i => 
+        i.descripcion.toUpperCase() === descripcion.toUpperCase() &&
+        i.presentacion === presentacion
+    );
 
-    BoletaManualState.items.push(nuevoItem);
+    if (existente) {
+        existente.cantidad = (parseInt(existente.cantidad) || 1) + cantVal;
+        existente.costoUnitario = costoVal > 0 ? costoVal : existente.costoUnitario;
+        existente.costo = existente.costoUnitario * existente.cantidad;
+        mostrarAlerta(`Se sumaron ${cantVal} unidad(es) a "${descripcion}". Total: ${existente.cantidad}`, 'success');
+    } else {
+        const nuevoItem = {
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            descripcion: descripcion,
+            laboratorio: laboratorio || '-',
+            presentacion: presentacion, // 'CAJA' o 'BLÍSTER'
+            costoUnitario: costoVal,
+            cantidad: cantVal,
+            costo: costoVal * cantVal
+        };
+        BoletaManualState.items.push(nuevoItem);
+        mostrarAlerta('Producto agregado a la boleta. Presiona Enter de nuevo para Imprimir [Doble Enter]', 'success');
+    }
+
     BoletaManualState.diferenciaEditadaManual = false; // re-evalúa la diferencia automáticamente
 
     renderTablaBoleta();
@@ -1408,8 +1542,6 @@ function agregarItemBoleta() {
 
     // Guardar timestamp para permitir impresión inmediata con un segundo Enter
     window._ultimoEnterTimestampBoleta = Date.now();
-
-    mostrarAlerta('Producto agregado a la boleta. Presiona Enter de nuevo para Imprimir [Doble Enter]', 'success');
 }
 
 function eliminarItemBoleta(id) {
@@ -1636,14 +1768,16 @@ function dibujarTicketCopia(doc, tipoCopia, items, info) {
     items.forEach((item, index) => {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7.5);
-        const itemTitulo = `${index + 1}. ${item.descripcion.toUpperCase()}`;
+        const cantPrefijo = (item.cantidad && item.cantidad > 1) ? `[x${item.cantidad}] ` : '';
+        const itemTitulo = `${index + 1}. ${cantPrefijo}${item.descripcion.toUpperCase()}`;
         const descLines = doc.splitTextToSize(itemTitulo, printableWidth);
         doc.text(descLines, margin, curY);
         curY += (descLines.length * 3.3);
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7);
-        const labText = `[${item.presentacion}] ${item.laboratorio || '-'}`;
+        const cantDetalle = (item.cantidad && item.cantidad > 1) ? ` (x${item.cantidad})` : '';
+        const labText = `[${item.presentacion}] ${item.laboratorio || '-'}${cantDetalle}`;
         const labLines = doc.splitTextToSize(labText, 48);
         doc.text(labLines, margin + 2.5, curY);
 
@@ -1759,6 +1893,52 @@ function dibujarTicketCopia(doc, tipoCopia, items, info) {
     curY += 8.0;
 }
 
+// Validación: Si el monto de cliente no supera al total/suma de costos de la boleta, mostrar error
+function validarMontoClienteSuficiente(sumaCostos, montoCliente) {
+    if (sumaCostos > 0 && montoCliente < sumaCostos) {
+        const falta = (sumaCostos - montoCliente).toFixed(2);
+        Swal.fire({
+            icon: 'error',
+            title: '¡Error! Monto del cliente insuficiente',
+            html: `
+                <div style="font-size: 14.5px; text-align: left;">
+                    <p class="mb-2 text-danger fw-bold">
+                        <i class="fas fa-exclamation-triangle me-1"></i> El monto del cliente no supera la suma de costos.
+                    </p>
+                    <div class="p-2 mb-2 rounded border" style="background-color: #fef2f2; border-color: #fca5a5 !important;">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Suma de Costos (Total):</span>
+                            <strong class="text-primary">S/ ${sumaCostos.toFixed(2)}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1 text-danger">
+                            <span>Monto entregado:</span>
+                            <strong>S/ ${montoCliente.toFixed(2)}</strong>
+                        </div>
+                        <hr class="my-1">
+                        <div class="d-flex justify-content-between fw-bold text-danger">
+                            <span>Monto faltante por cobrar:</span>
+                            <span>S/ ${falta}</span>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block">
+                        <i class="fas fa-info-circle me-1"></i> El monto ingresado debe ser igual o mayor a la suma de costos (S/ ${sumaCostos.toFixed(2)}) antes de emitir la boleta.
+                    </small>
+                </div>
+            `,
+            confirmButtonText: '<i class="fas fa-edit me-1"></i> Corregir Monto Cliente',
+            confirmButtonColor: '#dc2626'
+        }).then(() => {
+            const inputCliente = document.getElementById('boletaMontoCliente');
+            if (inputCliente) {
+                inputCliente.focus();
+                inputCliente.select();
+            }
+        });
+        return false;
+    }
+    return true;
+}
+
 function imprimirBoletaTicket80mm() {
     if (BoletaManualState.items.length === 0) {
         Swal.fire({
@@ -1770,11 +1950,17 @@ function imprimirBoletaTicket80mm() {
         return;
     }
 
-    const { jsPDF } = window.jspdf;
-
     const sumaCostos = BoletaManualState.items.reduce((acc, item) => acc + (parseFloat(item.costo) || 0), 0);
     const montoRaw = (document.getElementById('boletaMontoCliente')?.value || '0').toString().replace(/,/g, '.');
     const montoCliente = parseFloat(montoRaw) || 0;
+
+    // Bloquear si el monto no cubre la suma de costos
+    if (!validarMontoClienteSuficiente(sumaCostos, montoCliente)) {
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+
     const difRaw = (document.getElementById('boletaDiferenciaSoles')?.value || '').toString().replace(/,/g, '.');
     const diferencia = difRaw !== '' ? (parseFloat(difRaw) || 0) : (montoCliente - sumaCostos);
 
@@ -1904,17 +2090,23 @@ function dibujarPaginaA4(doc, tipoCopia, items, info) {
     doc.setFont(undefined, 'normal');
     doc.text(`${items.length} producto(s)`, 143, 52);
 
-    const bodyRows = items.map((item, index) => [
-        (index + 1).toString(),
-        item.descripcion.toUpperCase(),
-        (item.laboratorio || '-').toUpperCase(),
-        item.presentacion.toUpperCase(),
-        `S/ ${item.costo.toFixed(2)}`
-    ]);
+    const bodyRows = items.map((item, index) => {
+        const cant = item.cantidad || 1;
+        const costoUnit = item.costoUnitario || (item.costo / cant);
+        return [
+            (index + 1).toString(),
+            item.descripcion.toUpperCase(),
+            (item.laboratorio || '-').toUpperCase(),
+            item.presentacion.toUpperCase(),
+            cant.toString(),
+            `S/ ${costoUnit.toFixed(2)}`,
+            `S/ ${item.costo.toFixed(2)}`
+        ];
+    });
 
     doc.autoTable({
         startY: 60,
-        head: [['N°', 'DESCRIPCIÓN DEL PRODUCTO', 'LABORATORIO', 'PRESENTACIÓN', 'COSTO (S/.)']],
+        head: [['N°', 'DESCRIPCIÓN DEL PRODUCTO', 'LABORATORIO', 'PRESENTACIÓN', 'CANT.', 'P. UNIT', 'TOTAL (S/.)']],
         body: bodyRows,
         theme: 'grid',
         headStyles: {
@@ -1932,11 +2124,13 @@ function dibujarPaginaA4(doc, tipoCopia, items, info) {
             valign: 'middle'
         },
         columnStyles: {
-            0: { cellWidth: 10, halign: 'center' },
-            1: { cellWidth: 80, halign: 'left' },
-            2: { cellWidth: 46, halign: 'left' },
-            3: { cellWidth: 26, halign: 'center' },
-            4: { cellWidth: 20, halign: 'right', fontStyle: 'bold' }
+            0: { cellWidth: 8, halign: 'center' },
+            1: { cellWidth: 70, halign: 'left' },
+            2: { cellWidth: 40, halign: 'left' },
+            3: { cellWidth: 24, halign: 'center' },
+            4: { cellWidth: 14, halign: 'center', fontStyle: 'bold' },
+            5: { cellWidth: 16, halign: 'right' },
+            6: { cellWidth: 20, halign: 'right', fontStyle: 'bold' }
         },
         alternateRowStyles: {
             fillColor: [248, 250, 252]
@@ -2019,12 +2213,18 @@ function imprimirBoletaA4() {
         return;
     }
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4');
-
     const sumaCostos = BoletaManualState.items.reduce((acc, item) => acc + (parseFloat(item.costo) || 0), 0);
     const montoRaw = (document.getElementById('boletaMontoCliente')?.value || '0').toString().replace(/,/g, '.');
     const montoCliente = parseFloat(montoRaw) || 0;
+
+    // Bloquear si el monto no cubre la suma de costos
+    if (!validarMontoClienteSuficiente(sumaCostos, montoCliente)) {
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+
     const difRaw = (document.getElementById('boletaDiferenciaSoles')?.value || '').toString().replace(/,/g, '.');
     const diferencia = difRaw !== '' ? (parseFloat(difRaw) || 0) : (montoCliente - sumaCostos);
 
@@ -2796,7 +2996,7 @@ Brindar información CLARA, SEGURA, PRÁCTICA y basada en evidencia.
 
     const cuadrillosBoleta = [
         'boletaInputCodigo', 'btnBoletaBuscar', 'boletaDescripcion', 'btnBoletaLimpiarDesc',
-        'boletaLab', 'boletaPresentacion', 'boletaCosto',
+        'boletaLab', 'boletaPresentacion', 'boletaCantidad', 'btnBoletaCantMenosForm', 'btnBoletaCantMasForm', 'boletaCosto',
         'btnBoletaLimpiarCampos', 'btnBoletaAgregar', 'btnBoletaVaciar',
         'boletaMontoCliente', 'boletaDiferenciaSoles',
         'btnImprimirBoletaA4', 'btnImprimirBoletaPdf'
@@ -2817,6 +3017,23 @@ Brindar información CLARA, SEGURA, PRÁCTICA y basada en evidencia.
                     this.blur();
                 }
             });
+        }
+    });
+
+    // Control de cantidad en el formulario (+ / -)
+    document.getElementById('btnBoletaCantMenosForm')?.addEventListener('click', function () {
+        const inputCant = document.getElementById('boletaCantidad');
+        if (inputCant) {
+            let val = parseInt(inputCant.value, 10) || 1;
+            if (val > 1) inputCant.value = val - 1;
+        }
+    });
+
+    document.getElementById('btnBoletaCantMasForm')?.addEventListener('click', function () {
+        const inputCant = document.getElementById('boletaCantidad');
+        if (inputCant) {
+            let val = parseInt(inputCant.value, 10) || 1;
+            inputCant.value = val + 1;
         }
     });
 
