@@ -864,4 +864,41 @@ body {
     z-index: 1065 !important;
 }
 
+/* =========================================================
+   ESTILOS DE CIERRE X Y ESTADOS DE ERROR EN BOLETA
+   ========================================================= */
+
+.swal2-close {
+    font-size: 28px !important;
+    color: #64748b !important;
+    transition: color 0.15s ease, transform 0.15s ease !important;
+}
+
+.swal2-close:hover {
+    color: #ef4444 !important;
+    transform: scale(1.15) !important;
+}
+
+#boletaDiferenciaCard {
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Botones de control de cantidad (+ / -) */
+.btn-cant-menos,
+.btn-cant-mas {
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-cant-menos:hover {
+    background-color: #fee2e2 !important;
+    color: #dc2626 !important;
+}
+
+.btn-cant-mas:hover {
+    background-color: #dbeafe !important;
+    color: #1d4ed8 !important;
+}
+
+
+
 
