@@ -3081,3 +3081,3086 @@ Brindar información CLARA, SEGURA, PRÁCTICA y basada en evidencia.
     verificarUltimoArchivo();
     actualizarTabla();
 });
+'use strict';
+
+// ==================== ESTADO GLOBAL ====================
+const AppState = {
+    productos: [],
+    listaCanjes: [],
+    datosLote: [],
+    itemCounter: 0,
+    dataTable: null,
+    archivoActual: null,
+    productoActual: null,
+    indexSeleccionado: -1,
+    ultimoIndexInsertado: 0
+};
+
+// Variables para modales
+let fileModal = null;
+let deleteModal = null;
+let exportModal = null;
+
+// ==================== UTILIDADES ====================
+
+function limpiarTexto(texto) {
+    return texto ? texto.toString().trim().toUpperCase() : "";
+}
+
+function mostrarAlerta(mensaje, tipo) {
+    const iconos = { success: 'success', error: 'error', warning: 'warning', info: 'info' };
+    Swal.fire({
+        icon: iconos[tipo] || 'info',
+        title: tipo === 'error' ? 'Error' : 'Información',
+        text: mensaje,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+    });
+}
+
+function calcularUrgente(fechaMmAaaa, estado) {
+    if (!fechaMmAaaa || !/^\d{2}\/\d{4}$/.test(fechaMmAaaa) || !estado) return "";
+
+    try {
+        const [mes, anio] = fechaMmAaaa.split('/');
+        const fecha = new Date(parseInt(anio), parseInt(mes) - 1, 1);
+
+        const mesesRestar = {
+            'POLÍTICA REGULAR': 4,
+            'NO TIENE POLÍTICA': 1,
+            'POLÍTICA EXCEPCIONAL': 1
+        };
+
+        const meses = mesesRestar[estado.trim().toUpperCase()] || 0;
+        if (meses === 0) return "";
+
+        fecha.setMonth(fecha.getMonth() - meses);
+        const mesUrgente = (fecha.getMonth() + 1).toString().padStart(2, '0');
+        const anioUrgente = fecha.getFullYear();
+
+        return `${mesUrgente}/${anioUrgente}`;
+    } catch (error) {
+        console.error("Error calculando fecha urgente:", error);
+        return "";
+    }
+}
+
+function actualizarCampo(id, valor) {
+    const campo = document.getElementById(id);
+    if (!campo) return;
+
+    campo.value = valor || '';
+    campo.classList.toggle('campo-llenado', valor && valor.trim() !== '');
+}
+
+function formatoMmAaaa(input) {
+    const valor = input.value;
+    if (valor.length === 4) {
+        const mes = valor.substring(0, 2);
+        const anio = valor.substring(2, 4);
+
+        if (parseInt(mes, 10) > 12 || parseInt(mes, 10) === 0) {
+            mostrarAlerta('El mes ingresado es inválido (01-12).', 'warning');
+        } else {
+            input.value = `${mes}/20${anio}`;
+        }
+    }
+}
+
+// ==================== ALMACENAMIENTO LOCAL ====================
+
+function guardarDatosLocales() {
+    try {
+        localStorage.setItem('canjesGuardados', JSON.stringify(AppState.listaCanjes));
+        localStorage.setItem('itemCounter', AppState.itemCounter);
+        localStorage.setItem('ultimoArchivo', AppState.archivoActual);
+    } catch (error) {
+        console.error('Error guardando datos en localStorage:', error);
+    }
+}
+
+function cargarDatosLocales() {
+    try {
+        const canjesGuardados = localStorage.getItem('canjesGuardados');
+        const counterGuardado = localStorage.getItem('itemCounter');
+        const ultimoArchivo = localStorage.getItem('ultimoArchivo');
+
+        if (canjesGuardados) AppState.listaCanjes = JSON.parse(canjesGuardados);
+        if (counterGuardado) AppState.itemCounter = parseInt(counterGuardado);
+        if (ultimoArchivo) {
+            AppState.archivoActual = ultimoArchivo;
+            document.getElementById('labelArchivo').textContent = `Archivo cargado: ${ultimoArchivo}`;
+            const textBoleta = document.getElementById('textBoletaArchivo');
+            if (textBoleta) textBoleta.textContent = ultimoArchivo;
+        }
+
+        if (AppState.itemCounter > 0) {
+            document.getElementById('itemCounter').textContent = `🧮 Ítems: ${AppState.itemCounter}`;
+        }
+    } catch (error) {
+        console.error('Error cargando datos desde localStorage:', error);
+    }
+}
+
+function verificarUltimoArchivo() {
+    const ultimoArchivo = localStorage.getItem('ultimoArchivo');
+    if (ultimoArchivo) {
+        const btnUltimoArchivo = document.getElementById('btnUltimoArchivo');
+        btnUltimoArchivo.textContent = `Usar último archivo: ${ultimoArchivo}`;
+        btnUltimoArchivo.classList.remove('d-none');
+        document.getElementById('labelArchivo').textContent = `Archivo cargado: ${ultimoArchivo}`;
+        const textBoleta = document.getElementById('textBoletaArchivo');
+        if (textBoleta) textBoleta.textContent = ultimoArchivo;
+        return true;
+    }
+    return false;
+}
+
+// ==================== PRODUCTOS ====================
+
+function buscarProducto() {
+    const codigo = limpiarTexto(document.getElementById('inputCodigo').value);
+
+    if (!codigo || !AppState.productos || AppState.productos.length === 0) {
+        mostrarAlerta('Ingresa un código válido y asegúrate de haber cargado un archivo de políticas', 'warning');
+        return;
+    }
+
+    const producto = AppState.productos.find(p =>
+        limpiarTexto(p['COD POSU']) === codigo || limpiarTexto(p['EAN']) === codigo
+    );
+
+    if (!producto) {
+        mostrarAlerta(`No se encontró el producto con código: ${codigo}`, 'error');
+        limpiarCamposProducto();
+        return;
+    }
+
+    actualizarCampo('labelDescripcion', producto['DESCRIPCION']);
+    actualizarCampo('labelLab', producto['LABORATORIO']);
+    actualizarCampo('labelLif', producto['LIF Condicional']);
+    actualizarCampo('labelEstado', producto['POLITICA']);
+
+    // Verificar similitud en el JSON de lotes usando el código POSU General
+    const posuGeneral = limpiarTexto(producto['COD POSU']);
+
+    // Elementos de la UI
+    const labelPosu = document.getElementById('labelPosuGeneral');
+    const labelProveedor = document.getElementById('labelProveedorLote');
+    const labelLote = document.getElementById('labelLecturaLote');
+    const labelVida = document.getElementById('labelTiempoVida');
+
+    // Mostramos explícitamente el código POSU General que se está usando
+    if (labelPosu) labelPosu.textContent = posuGeneral;
+
+    const productoLote = AppState.datosLote.find(p => {
+        if (!p['COD FARMAVENTA']) return false;
+        const codJson = p['COD FARMAVENTA'].toString().trim().toUpperCase();
+        return codJson === posuGeneral || parseInt(codJson, 10) === parseInt(posuGeneral, 10);
+    });
+
+    if (productoLote) {
+        actualizarEstadoBotonLote(true);
+        labelProveedor.textContent = productoLote['PRODUCTO'] || 'Dato no especificado';
+        labelProveedor.className = 'mb-2 mb-md-0 fw-bold text-dark';
+
+        labelVida.textContent = productoLote['TIEMPO DE VIDA UTIL'] || 'Dato no especificado';
+        labelVida.className = 'mb-2 mb-md-0 fw-bold text-dark';
+
+        labelLote.textContent = productoLote['LECTURA DE LOTE'] || 'Dato no especificado';
+        labelLote.className = 'mb-0 fw-bold text-dark';
+    } else {
+        actualizarEstadoBotonLote(false);
+        labelProveedor.textContent = 'Datos no encontrados';
+        labelProveedor.className = 'mb-2 mb-md-0 text-danger fst-italic';
+
+        labelVida.textContent = 'Datos no encontrados';
+        labelVida.className = 'mb-2 mb-md-0 text-danger fst-italic';
+
+        labelLote.textContent = 'Datos no encontrados';
+        labelLote.className = 'mb-0 text-danger fst-italic';
+    }
+
+
+    const condicionLabel = document.getElementById('labelCondicionPolitica');
+    const condicionPanel = document.getElementById('panelCondicionPolitica');
+    const alerta = document.getElementById('alertCondicion');
+
+    const condicionCanje = (producto['Condición para Canje Entero'] || '').toString().trim();
+
+    if (condicionLabel && condicionPanel && alerta) {
+        condicionLabel.textContent = condicionCanje;
+        alerta.className = 'alert alert-info fw-bold shadow-sm';
+        condicionPanel.style.display = condicionCanje ? 'block' : 'none';
+    }
+    AppState.productoActual = producto;
+    document.getElementById('inputFecha').focus();
+}
+
+
+function actualizarEstadoBotonLote(tieneDatos) {
+    const btn = document.getElementById('btnToggleLote');
+    if (!btn) return;
+    if (tieneDatos) {
+        btn.classList.remove('btn-danger');
+        btn.classList.add('btn-success');
+        btn.innerHTML = '🟢 Ver información de Lote y Vida Útil (F2) Verifica productos sin fecha vencimiento por lote';
+    } else {
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-danger');
+        btn.innerHTML = '🔴 Sin información de lote (F2) Verifica productos sin fecha vencimiento por lote';
+    }
+}
+
+function togglePanelLote() {
+    const panel = document.getElementById('panelLote');
+    const btn = document.getElementById('btnToggleLote');
+    if (!panel || !btn) return;
+    if (btn.classList.contains('btn-danger')) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sin información de lote',
+            text: 'Producto probablemente nuevo. Consultar al DT del local o verificar bien la fecha de vencimiento.',
+            confirmButtonColor: '#ffc107'
+        });
+        return;
+    }
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function limpiarCamposProducto() {
+    document.getElementById('inputCodigo').value = '';
+    actualizarCampo('labelDescripcion', '');
+    actualizarCampo('labelLab', '');
+    actualizarCampo('labelLif', '');
+    actualizarCampo('labelEstado', '');
+
+    const labelPosu = document.getElementById('labelPosuGeneral');
+    const labelProveedor = document.getElementById('labelProveedorLote');
+    const labelLote = document.getElementById('labelLecturaLote');
+    const labelVida = document.getElementById('labelTiempoVida');
+
+    if (labelPosu) {
+        labelPosu.textContent = 'Esperando búsqueda...';
+    }
+    if (labelProveedor) {
+        labelProveedor.textContent = 'Esperando búsqueda...';
+        labelProveedor.className = 'mb-2 mb-md-0';
+    }
+    if (labelLote) {
+        labelLote.textContent = 'Esperando búsqueda...';
+        labelLote.className = 'mb-0';
+    }
+    actualizarEstadoBotonLote(false);
+    document.getElementById('panelLote').style.display = 'none';
+    if (labelVida) {
+        labelVida.textContent = 'Esperando búsqueda...';
+        labelVida.className = 'mb-2 mb-md-0';
+    }
+
+
+    const condicionLabel2 = document.getElementById('labelCondicionPolitica');
+    const condicionPanel2 = document.getElementById('panelCondicionPolitica');
+    if (condicionLabel2) condicionLabel2.textContent = '';
+    if (condicionPanel2) condicionPanel2.style.display = 'none';
+    AppState.productoActual = null;
+}
+
+function limpiarFormulario() {
+    document.getElementById('inputCodigo').value = '';
+    document.getElementById('inputFecha').value = '';
+    document.getElementById('inputEntero').value = '0';
+    document.getElementById('inputFraccion').value = '0';
+    limpiarCamposProducto();
+    AppState.indexSeleccionado = -1;
+    document.getElementById('inputCodigo').focus();
+}
+
+function guardarProducto() {
+    if (!AppState.productoActual) {
+        mostrarAlerta('Primero busca un producto', 'warning');
+        return;
+    }
+
+    const responsable = document.getElementById('inputResponsable').value.trim();
+    const fechaVenc = document.getElementById('inputFecha').value.trim();
+    const entero = document.getElementById('inputEntero').value.trim();
+    const fraccion = document.getElementById('inputFraccion').value.trim();
+
+    if (!responsable || !fechaVenc) {
+        mostrarAlerta('Los campos "Responsable" y "F-V" son obligatorios.', 'warning');
+        return;
+    }
+
+    if (!/^\d{2}\/\d{4}$/.test(fechaVenc)) {
+        mostrarAlerta('El formato de fecha es incorrecto. Debe ser MM/AAAA.', 'warning');
+        return;
+    }
+
+    const enteroNum = parseInt(entero || '0', 10);
+    const fraccionNum = parseInt(fraccion || '0', 10);
+
+    if (enteroNum === 0 && fraccionNum === 0) {
+        mostrarAlerta('No puedes guardar E = 0 y F = 0 al mismo tiempo. Debe existir stock entero o fracción.', 'error');
+        return;
+    }
+
+    if (enteroNum < 0 || fraccionNum < 0) {
+        mostrarAlerta('No se permiten valores negativos en Entero o Fracción.', 'warning');
+        return;
+    }
+
+    const estado = AppState.productoActual['POLITICA'] || '';
+    const urgente = calcularUrgente(fechaVenc, estado);
+
+    const nuevoCanje = {
+        RESPONSABLE: responsable,
+        'COD POSU': AppState.productoActual['COD POSU'],
+        'DESCRIPCION': AppState.productoActual['DESCRIPCION'],
+        'LABORATORIO': AppState.productoActual['LABORATORIO'],
+        'ESTADO': estado,
+        'F-V': fechaVenc,
+        'E': entero || '0',
+        'F': fraccion || '0',
+        'URGENTE': urgente
+    };
+
+    if (AppState.indexSeleccionado >= 0) {
+        AppState.listaCanjes[AppState.indexSeleccionado] = nuevoCanje;
+        AppState.indexSeleccionado = -1;
+        mostrarAlerta('Producto actualizado correctamente', 'success');
+    } else {
+        AppState.listaCanjes.unshift(nuevoCanje);
+        AppState.ultimoIndexInsertado = 0;
+        AppState.itemCounter++;
+        mostrarAlerta('Producto guardado correctamente', 'success');
+    }
+
+    document.getElementById('itemCounter').textContent = `🧮 Ítems: ${AppState.itemCounter}`;
+    actualizarTabla();
+    limpiarFormulario();
+
+    setTimeout(() => {
+        const primeraFila = document.querySelector('#productosTable tbody tr');
+
+        if (primeraFila) {
+            primeraFila.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+
+            primeraFila.classList.add('fila-reciente');
+
+            setTimeout(() => {
+                primeraFila.classList.remove('fila-reciente');
+            }, 3000);
+        }
+    }, 350);
+
+    guardarDatosLocales();
+}
+
+// ==================== TABLA ====================
+
+function actualizarTabla() {
+    if (AppState.dataTable) {
+        AppState.dataTable.destroy();
+    }
+
+    const tbody = document.querySelector('#productosTable tbody');
+    tbody.innerHTML = '';
+
+    AppState.listaCanjes.forEach((canje, index) => {
+        const estado = canje.ESTADO || '';
+        const badgeClass = {
+            'TIENE POLÍTICA': 'badge-tiene',
+            'NO TIENE POLÍTICA': 'badge-no-tiene',
+            'POLÍTICA EXCEPCIONAL': 'badge-excepcional'
+        }[estado] || '';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+                <td>${canje.RESPONSABLE || ''}</td>
+                <td>${canje['COD POSU'] || ''}</td>
+                <td>${canje['DESCRIPCION'] || ''}</td>
+                <td>${canje['LABORATORIO'] || ''}</td>
+                <td><span class="badge-policy ${badgeClass}">${estado}</span></td>
+                <td>${canje['F-V'] || ''}</td>
+                <td>${canje.E || ''}</td>
+                <td>${canje.F || ''}</td>
+                <td>${canje.URGENTE || ''}</td>
+                <td class="table-actions">
+                    <button class="btn btn-sm btn-outline-primary btn-editar" data-index="${index}" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger btn-eliminar" data-index="${index}" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+        tbody.appendChild(tr);
+    });
+
+    AppState.dataTable = new DataTable('#productosTable', {
+        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
+        responsive: true,
+        order: []
+    });
+
+    document.querySelectorAll('.btn-editar').forEach(btn => {
+        btn.addEventListener('click', () => editarFila(parseInt(btn.dataset.index)));
+    });
+    document.querySelectorAll('.btn-eliminar').forEach(btn => {
+        btn.addEventListener('click', () => confirmarEliminar(parseInt(btn.dataset.index)));
+    });
+}
+
+function editarFila(index) {
+    const canje = AppState.listaCanjes[index];
+    AppState.indexSeleccionado = index;
+
+    document.getElementById('inputCodigo').value = canje['COD POSU'];
+    buscarProducto();
+
+    document.getElementById('inputResponsable').value = canje.RESPONSABLE || '';
+    document.getElementById('inputFecha').value = canje['F-V'] || '';
+    document.getElementById('inputEntero').value = canje.E || '0';
+    document.getElementById('inputFraccion').value = canje.F || '0';
+
+    document.querySelector('.form-container').scrollIntoView({ behavior: 'smooth' });
+}
+
+function confirmarEliminar(index) {
+    const canje = AppState.listaCanjes[index];
+    document.getElementById('deleteItemCode').textContent = canje['COD POSU'];
+    document.getElementById('deleteItemDesc').textContent = canje['DESCRIPCION'];
+    AppState.indexSeleccionado = index;
+    deleteModal.show();
+}
+
+function eliminarFila() {
+    if (AppState.indexSeleccionado < 0) return;
+
+    AppState.listaCanjes.splice(AppState.indexSeleccionado, 1);
+    AppState.indexSeleccionado = -1;
+    AppState.itemCounter--;
+
+    document.getElementById('itemCounter').textContent = `🧮 Ítems: ${AppState.itemCounter}`;
+    actualizarTabla();
+    deleteModal.hide();
+    guardarDatosLocales();
+    mostrarAlerta('Producto eliminado correctamente', 'success');
+}
+
+function eliminarTodo() {
+    if (AppState.listaCanjes.length === 0) {
+        mostrarAlerta('La tabla ya está vacía.', 'info');
+        return;
+    }
+
+    Swal.fire({
+        title: '¿Eliminar todos los productos?',
+        text: 'Esta acción eliminará todos los productos agregados.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar todo',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#009739'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            AppState.listaCanjes = [];
+            AppState.itemCounter = 0;
+            guardarDatosLocales();
+            document.getElementById('itemCounter').textContent = `🧮 Ítems: 0`;
+            actualizarTabla();
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Eliminado',
+                text: 'Todos los productos han sido eliminados.',
+                confirmButtonColor: '#009739'
+            });
+        }
+    });
+}
+
+// ==================== FILTROS ====================
+
+function aplicarFiltros() {
+    if (!AppState.dataTable) return;
+
+    const filtroEstado = document.getElementById('filtroEstado').value;
+
+    AppState.dataTable
+        .column(1).search(limpiarTexto(document.getElementById('filtroCodigoPosu').value))
+        .column(3).search(limpiarTexto(document.getElementById('filtroLaboratorio').value))
+        .column(4).search(filtroEstado ? '^' + filtroEstado + '$' : '', true, false)
+        .column(5).search(document.getElementById('filtroFecha').value)
+        .column(8).search(document.getElementById('filtroUrgente').value)
+        .draw();
+}
+
+function limpiarFiltros() {
+    if (!AppState.dataTable) return;
+
+    document.getElementById('filtroCodigoPosu').value = '';
+    document.getElementById('filtroEstado').value = '';
+    document.getElementById('filtroLaboratorio').value = '';
+    document.getElementById('filtroFecha').value = '';
+    document.getElementById('filtroUrgente').value = '';
+
+    AppState.dataTable.columns().search('').draw();
+}
+// ==================== EXPORTACIÓN PDF ====================
+
+function parseFechaUrgente(fecha) {
+    if (!fecha || typeof fecha !== 'string') return 999999;
+    const partes = fecha.trim().split('/');
+    if (partes.length === 2) {
+        const mes = parseInt(partes[0], 10);
+        const anio = parseInt(partes[1], 10);
+        if (!isNaN(mes) && !isNaN(anio)) {
+            return anio * 100 + mes;
+        }
+    }
+    return 999999;
+}
+
+function generarPDF(data, titulo, ordenarAZ = true) {
+    if (!data || data.length === 0) {
+        mostrarAlerta('No hay datos para generar el reporte PDF.', 'warning');
+        return;
+    }
+
+    let dataProcesada = [...data];
+
+    if (ordenarAZ) {
+        dataProcesada.sort((a, b) => {
+            const urgA = parseFechaUrgente(a['URGENTE']);
+            const urgB = parseFechaUrgente(b['URGENTE']);
+            if (urgA !== urgB) {
+                return urgA - urgB;
+            }
+            const labA = (a['LABORATORIO'] || '').toString().toUpperCase();
+            const labB = (b['LABORATORIO'] || '').toString().toUpperCase();
+            return labA.localeCompare(labB, 'es');
+        });
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape');
+
+    const fechaHoy = new Date().toISOString().slice(0, 10);
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // ==================== ENCABEZADO ====================
+
+    doc.setTextColor(0, 0, 0);
+
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+
+    doc.text(
+        'GESTOR DE CANJES - REPORTE',
+        pageWidth / 2,
+        12,
+        { align: 'center' }
+    );
+
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'normal');
+
+    doc.text(
+        `TIPO: ${titulo}`,
+        pageWidth / 2,
+        18,
+        { align: 'center' }
+    );
+
+    const nombrePol = AppState.archivoActual ? AppState.archivoActual : 'Sin_Archivo';
+    doc.text(
+        `UTILIZAS EL ARCHIVO: ${nombrePol}`,
+        pageWidth / 2,
+        22,
+        { align: 'center' }
+    );
+
+    doc.text(
+        `FECHA: ${new Date().toLocaleString()}`,
+        pageWidth / 2,
+        26,
+        { align: 'center' }
+    );
+
+    doc.text(
+        `PRODUCTOS ENCONTRADOS: ${dataProcesada.length}`,
+        pageWidth / 2,
+        30,
+        { align: 'center' }
+    );
+
+    // ==================== COLUMNAS ====================
+
+    const columns = [
+        { header: 'RESP.', dataKey: 'RESPONSABLE' },
+        { header: 'COD_POSU', dataKey: 'COD POSU' },
+        { header: 'DESCRIPCION', dataKey: 'DESCRIPCION' },
+        { header: 'LABORATORIO', dataKey: 'LABORATORIO' },
+        { header: 'ESTADO', dataKey: 'ESTADO' },
+        { header: 'F-V', dataKey: 'F-V' },
+        { header: 'E', dataKey: 'E' },
+        { header: 'F', dataKey: 'F' },
+        { header: 'URGENTE', dataKey: 'URGENTE' }
+    ];
+
+    // ==================== COLUMNAS COMPACTAS ====================
+
+    const columnStyles = {
+        0: { cellWidth: 18, halign: 'center' },
+        1: { cellWidth: 18, halign: 'center' },
+        2: { cellWidth: 50, halign: 'left' },
+        3: { cellWidth: 30, halign: 'left' },
+        4: { cellWidth: 28, halign: 'center' },
+        5: { cellWidth: 14, halign: 'center' },
+        6: { cellWidth: 8, halign: 'center' },
+        7: { cellWidth: 8, halign: 'center' },
+        8: { cellWidth: 18, halign: 'center' }
+    };
+
+    const totalWidth =
+        18 + 18 + 50 + 30 + 28 + 14 + 8 + 8 + 18;
+
+    const marginLeft = (pageWidth - totalWidth) / 2;
+
+    // ==================== TABLA ====================
+
+    doc.autoTable({
+        startY: 34,
+        columns: columns,
+        body: dataProcesada,
+        theme: 'grid',
+
+        headStyles: {
+            fillColor: [255, 255, 255],
+            textColor: [0, 0, 0],
+            fontStyle: 'bold',
+            fontSize: 7.5,
+            cellPadding: 1,
+            halign: 'center',
+            valign: 'middle',
+            lineWidth: 0.6,
+            lineColor: [0, 0, 0]
+        },
+
+        styles: {
+            fontSize: 6.8,
+            cellPadding: 0.8,
+            textColor: [0, 0, 0],
+            fillColor: [255, 255, 255],
+            lineWidth: 0.3,
+            lineColor: [0, 0, 0],
+            valign: 'middle',
+            overflow: 'linebreak'
+        },
+
+        bodyStyles: {
+            lineWidth: 0.25
+        },
+
+        alternateRowStyles: {
+            fillColor: [255, 255, 255]
+        },
+
+        columnStyles: columnStyles,
+
+        didDrawCell: function (data) {
+            if (data.section === 'head') {
+                data.doc.setLineWidth(0.8);
+                data.doc.setDrawColor(0, 0, 0);
+
+                data.doc.line(
+                    data.cell.x,
+                    data.cell.y,
+                    data.cell.x + data.cell.width,
+                    data.cell.y
+                );
+            }
+        },
+
+        margin: {
+            top: 30,
+            left: marginLeft,
+            bottom: 50
+        },
+
+        tableWidth: totalWidth
+    });
+
+    // ==================== EXPORTAR ====================
+
+    // Obtenemos el nombre del archivo cargado desde el estado global (quitándole el .xlsx)
+    let nombreArchivo = 'Sin_Archivo';
+    if (AppState.archivoActual) {
+        nombreArchivo = AppState.archivoActual.split('.').slice(0, -1).join('_').replace(/ /g, '_');
+    }
+
+    // Guardamos el PDF incluyendo el nombre del archivo en la estructura
+    doc.save(
+        `Reporte_${titulo.replace(/ /g, '_')}_${nombreArchivo}_${fechaHoy}.pdf`
+    );
+
+    exportModal.hide();
+}
+
+// ==================== FUNCIONES DE EXPORTACIÓN ====================
+
+function exportarPdfExcepcional() {
+    const datos = AppState.listaCanjes.filter(item =>
+        limpiarTexto(item.ESTADO) === 'POLÍTICA EXCEPCIONAL'
+    );
+    generarPDF(datos, 'Política Excepcional', true);
+}
+
+function exportarPdfNoTiene() {
+    const datos = AppState.listaCanjes.filter(item =>
+        limpiarTexto(item.ESTADO) === 'NO TIENE POLÍTICA'
+    );
+    generarPDF(datos, 'No Tiene Política', true);
+}
+
+function exportarPdfCanje() {
+    const input = document.getElementById('inputExportUrgente').value.trim();
+
+    if (!/^\d{2}\/\d{4}$/.test(input)) {
+        mostrarAlerta('Ingrese una fecha válida (MM/AAAA). Use el formato indicado.', 'warning');
+        return;
+    }
+
+    const datos = AppState.listaCanjes.filter(item =>
+        (item.URGENTE || '').trim() === input
+    );
+
+    if (datos.length === 0) {
+        mostrarAlerta(`No se encontraron ítems con fecha URGENTE ${input}.`, 'info');
+        return;
+    }
+
+    generarPDF(datos, `Canjes Urgentes ${input}`, true);
+}
+
+function exportarPdfTodo() {
+    generarPDF(AppState.listaCanjes, 'Listado Completo', true);
+}
+
+// ==================== EXPORTACIÓN EXCEL ====================
+
+function exportarExcel() {
+    let bodyData = AppState.listaCanjes;
+
+    if (bodyData.length === 0) {
+        mostrarAlerta('No hay datos para exportar.', 'warning');
+        return;
+    }
+
+    bodyData.sort((a, b) => {
+        const urgA = parseFechaUrgente(a['URGENTE']);
+        const urgB = parseFechaUrgente(b['URGENTE']);
+        if (urgA !== urgB) {
+            return urgA - urgB;
+        }
+        const labA = (a['LABORATORIO'] || '').toString().toUpperCase();
+        const labB = (b['LABORATORIO'] || '').toString().toUpperCase();
+        return labA.localeCompare(labB, 'es');
+    });
+
+    const fechaHoy = new Date().toISOString().slice(0, 10);
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(bodyData);
+
+    XLSX.utils.book_append_sheet(wb, ws, "Canjes");
+    XLSX.writeFile(wb, `Reporte_Canjes_${fechaHoy}.xlsx`);
+}
+
+// ==================== ARCHIVOS ====================
+
+function procesarArchivoExcel(file) {
+    if (!file) {
+        mostrarAlerta('No se seleccionó ningún archivo', 'warning');
+        return;
+    }
+
+    Swal.fire({
+        title: 'Cargando archivo...',
+        text: 'Esto puede tardar unos segundos',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        setTimeout(() => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+
+                const posiblesNombres = ['DETALLE_POR_SKU', 'DETALLE POR SKU', 'Hoja1', 'Sheet1'];
+                let hojaValida = posiblesNombres.find(n => workbook.SheetNames.includes(n)) || workbook.SheetNames[0];
+
+                if (!hojaValida) {
+                    throw new Error('No se encontró ninguna hoja válida en el archivo');
+                }
+
+                const worksheet = workbook.Sheets[hojaValida];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                if (!jsonData || jsonData.length === 0) {
+                    throw new Error(`No se encontraron datos en la hoja "${hojaValida}"`);
+                }
+
+                AppState.productos = jsonData.map(row => ({
+                    'EAN': limpiarTexto(row['EAN']),
+                    'COD SAP': limpiarTexto(row['COD SAP']),
+                    'COD POSU': limpiarTexto(row['COD POSU']),
+                    'DESCRIPCION': row['DESCRIPCION'],
+                    'COD PROV': limpiarTexto(row['COD PROV']),
+                    'PROVEEDOR': row['PROVEEDOR'],
+                    'COD LAB': limpiarTexto(row['COD LAB']),
+                    'LABORATORIO': row['LABORATORIO'],
+                    'POLITICA': row['POLITICA'],
+                    'CAMBIO_POLITICA': row['CAMBIO_POLITICA'],
+                    'Condición para Canje Entero': row['Condición para Canje Entero'],
+                    'LIF Condicional': row['LIF Condicional'],
+                    'Condición para LIF': row['Condición para LIF'],
+                    'Observación': row['Observación']
+                }));
+
+                AppState.archivoActual = file.name;
+
+                const btnUltimoArchivo = document.getElementById('btnUltimoArchivo');
+                btnUltimoArchivo.textContent = `Usar último archivo: ${AppState.archivoActual}`;
+                btnUltimoArchivo.classList.remove('d-none');
+                document.getElementById('labelArchivo').textContent = `Archivo cargado: ${file.name}`;
+                const textBoleta = document.getElementById('textBoletaArchivo');
+                if (textBoleta) textBoleta.textContent = file.name;
+                localStorage.setItem('ultimoArchivo', file.name);
+
+                fileModal.hide();
+                document.getElementById('welcomeScreen').classList.add('d-none');
+                document.getElementById('mainApp').classList.remove('d-none');
+                Swal.close();
+                mostrarAlerta('Archivo cargado correctamente', 'success');
+
+            } catch (error) {
+                console.error('Error procesando archivo:', error);
+                Swal.close();
+                mostrarAlerta(`Error al procesar el archivo: ${error.message}`, 'error');
+            }
+        }, 100);
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+// ==================== BOLETA MANUAL (PUNTO DE VENTA) ====================
+
+const BoletaManualState = {
+    items: [],
+    diferenciaEditadaManual: false,
+    modalInstance: null
+};
+
+function sanitizarNumeroDecimal(val) {
+    if (!val) return '';
+    let limpio = val.toString().replace(/,/g, '.').replace(/[^0-9.]/g, '');
+    const partes = limpio.split('.');
+    if (partes.length > 2) {
+        limpio = partes[0] + '.' + partes.slice(1).join('');
+    }
+    return limpio;
+}
+
+// Verificación de Excel cargado para Boleta Manual
+function verificarExcelCargadoBoleta(mostrarErrorSiFalta = true) {
+    if (!AppState.productos || AppState.productos.length === 0) {
+        if (mostrarErrorSiFalta) {
+            Swal.fire({
+                icon: 'error',
+                title: '¡Error! Recarga tu politica de devolucion ',
+                html: `
+                    <div style="font-size: 14.5px; text-align: left;">
+                        <p class="mb-2 text-danger fw-bold">
+                            <i class="fas fa-exclamation-triangle me-1"></i> No se ha cargado el archivo Excel de políticas.
+                        </p>
+                        <p class="mb-2 text-dark">
+                            Debes recargar o insertar tu archivo Excel de políticas de devolución antes de usar las funciones de la Boleta Manual.
+                        </p>
+                        <small class="text-muted d-block">
+                            <i class="fas fa-info-circle me-1"></i> Carga tu archivo para habilitar el buscador, referentes y cálculos de boleta.
+                        </small>
+                    </div>
+                `,
+                confirmButtonText: '<i class="fas fa-file-excel me-1"></i> Cargar tu politica de devolucion Ahora',
+                confirmButtonColor: '#0d6efd',
+                showCloseButton: true,
+                allowOutsideClick: true
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    fileModal.show();
+                }
+            });
+        }
+        return false;
+    }
+    return true;
+}
+
+function abrirModalBoletaManual() {
+    const textArchivo = document.getElementById('textBoletaArchivo');
+    if (textArchivo) {
+        textArchivo.textContent = AppState.archivoActual ? AppState.archivoActual : 'Sin Excel cargado';
+    }
+
+    if (!BoletaManualState.modalInstance) {
+        const modalEl = document.getElementById('modalBoletaManual');
+        if (modalEl) {
+            BoletaManualState.modalInstance = new bootstrap.Modal(modalEl);
+        }
+    }
+
+    if (BoletaManualState.modalInstance) {
+        BoletaManualState.modalInstance.show();
+        setTimeout(() => {
+            // Solo autoenfocar si el Excel ya está cargado para no saltar la alerta antes del clic del usuario
+            if (AppState.productos && AppState.productos.length > 0) {
+                const inputCodigo = document.getElementById('boletaInputCodigo');
+                if (inputCodigo) {
+                    inputCodigo.focus();
+                    inputCodigo.select();
+                }
+            }
+        }, 400);
+    }
+}
+
+function buscarProductoBoleta() {
+    if (!verificarExcelCargadoBoleta(true)) {
+        return;
+    }
+
+    const inputCodigo = document.getElementById('boletaInputCodigo');
+    const codigo = (inputCodigo.value || '').replace(/\D/g, '').trim();
+
+    if (!codigo) {
+        mostrarAlerta('Ingresa un código numérico (POSU o EAN) para buscar.', 'warning');
+        inputCodigo.focus();
+        return;
+    }
+
+    let producto = null;
+
+    // Buscar en AppState.productos (Excel de políticas cargado)
+    if (AppState.productos && AppState.productos.length > 0) {
+        producto = AppState.productos.find(p =>
+            limpiarTexto(p['COD POSU']) === codigo || limpiarTexto(p['EAN']) === codigo
+        );
+    }
+
+    if (!producto) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Código no encontrado',
+            html: `
+                <div style="text-align: left; font-size: 14.5px;">
+                    <p class="mb-2 text-danger fw-bold" style="font-size: 15px;">
+                        <i class="fas fa-barcode me-1"></i> Error por código de barra.
+                    </p>
+                    <p class="mb-2">
+                        Verificar por código POSU o si no realiza manualmente con la descripción automática.
+                    </p>
+                    <div class="p-2 rounded bg-light border text-muted small mt-2">
+                        <i class="fas fa-info-circle me-1 text-primary"></i> Código buscado: <strong>${codigo}</strong> (no figura en el Excel cargado).
+                    </div>
+                </div>
+            `,
+            confirmButtonText: '<i class="fas fa-edit me-1"></i> Ir a Descripción Automática',
+            confirmButtonColor: '#0d6efd'
+        }).then(() => {
+            const inputDesc = document.getElementById('boletaDescripcion');
+            if (inputDesc) {
+                inputDesc.focus();
+                inputDesc.select();
+            }
+        });
+        return;
+    }
+
+    document.getElementById('boletaDescripcion').value = producto['DESCRIPCION'] || '';
+    document.getElementById('boletaLab').value = producto['LABORATORIO'] || '';
+
+    // Ocultar sugerencias si estuvieran abiertas
+    const panelSugerencias = document.getElementById('boletaSugerenciasDescripcion');
+    if (panelSugerencias) {
+        panelSugerencias.innerHTML = '';
+        panelSugerencias.classList.add('d-none');
+    }
+
+    mostrarAlerta(`Producto: ${producto['DESCRIPCION']}`, 'success');
+
+    const inputCosto = document.getElementById('boletaCosto');
+    inputCosto.focus();
+    inputCosto.select();
+}
+
+function limpiarCamposBoleta() {
+    document.getElementById('boletaInputCodigo').value = '';
+    document.getElementById('boletaDescripcion').value = '';
+    document.getElementById('boletaLab').value = '';
+    document.getElementById('boletaPresentacion').value = 'CAJA';
+    const inputCant = document.getElementById('boletaCantidad');
+    if (inputCant) inputCant.value = '1';
+    document.getElementById('boletaCosto').value = '';
+    const panelSugerencias = document.getElementById('boletaSugerenciasDescripcion');
+    if (panelSugerencias) {
+        panelSugerencias.innerHTML = '';
+        panelSugerencias.classList.add('d-none');
+    }
+    document.getElementById('boletaInputCodigo').focus();
+}
+
+// Autocompletado de Referentes en Descripción (máximo 3 líneas) con navegación por Flecha Abajo y Enter
+function configurarAutocompletadoDescripcion() {
+    const inputDesc = document.getElementById('boletaDescripcion');
+    const panelSugerencias = document.getElementById('boletaSugerenciasDescripcion');
+    const btnLimpiarDesc = document.getElementById('btnBoletaLimpiarDesc');
+
+    if (!inputDesc || !panelSugerencias) return;
+
+    let resultadosActuales = [];
+    let indiceSeleccionado = -1;
+
+    if (btnLimpiarDesc) {
+        btnLimpiarDesc.addEventListener('click', () => {
+            inputDesc.value = '';
+            panelSugerencias.innerHTML = '';
+            panelSugerencias.classList.add('d-none');
+            resultadosActuales = [];
+            indiceSeleccionado = -1;
+            inputDesc.focus();
+        });
+    }
+
+    function actualizarSeleccionVisual() {
+        const items = panelSugerencias.querySelectorAll('.boleta-sugerencia-item');
+        items.forEach((item, idx) => {
+            if (idx === indiceSeleccionado) {
+                item.classList.add('activa', 'active');
+                item.setAttribute('aria-selected', 'true');
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('activa', 'active');
+                item.removeAttribute('aria-selected');
+            }
+        });
+    }
+
+    function seleccionarSugerencia(idx) {
+        const seleccionado = resultadosActuales[idx];
+        if (!seleccionado) return;
+
+        inputDesc.value = seleccionado.descripcion;
+
+        const inputLab = document.getElementById('boletaLab');
+        if (inputLab) inputLab.value = seleccionado.laboratorio;
+
+        if (seleccionado.codigo) {
+            const inputCod = document.getElementById('boletaInputCodigo');
+            if (inputCod) inputCod.value = seleccionado.codigo;
+        }
+
+        panelSugerencias.innerHTML = '';
+        panelSugerencias.classList.add('d-none');
+        resultadosActuales = [];
+        indiceSeleccionado = -1;
+
+        // Mover foco directamente a costo
+        const inputCosto = document.getElementById('boletaCosto');
+        if (inputCosto) {
+            inputCosto.focus();
+            inputCosto.select();
+        }
+        mostrarAlerta(`Referente seleccionado: ${seleccionado.descripcion}`, 'info');
+    }
+
+    function renderizarSugerencias(resultados) {
+        resultadosActuales = resultados;
+        indiceSeleccionado = -1;
+
+        if (resultados.length === 0) {
+            panelSugerencias.innerHTML = `
+                <div class="p-2 text-center text-muted small bg-white">
+                    <i class="fas fa-info-circle me-1"></i> No se encontraron referentes para "<strong>${inputDesc.value}</strong>". Puedes escribirlo manual.
+                </div>
+            `;
+            panelSugerencias.classList.remove('d-none');
+            return;
+        }
+
+        // Renderizar hasta 3 líneas referentes
+        panelSugerencias.innerHTML = resultados.map((item, index) => `
+            <button type="button" class="list-group-item list-group-item-action boleta-sugerencia-item text-start p-2 border-bottom" data-index="${index}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-dark text-truncate d-block" style="font-size: 0.82rem;">
+                        <i class="fas fa-pills text-primary me-1"></i> ${item.descripcion}
+                    </span>
+                    <span class="badge bg-light text-primary border ms-2" style="font-size: 0.68rem;">
+                        ${item.codigo ? 'Cód: ' + item.codigo : item.origen}
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center text-muted mt-1" style="font-size: 0.72rem;">
+                    <span class="text-truncate" style="max-width: 65%;"><i class="fas fa-industry me-1"></i> ${item.laboratorio}</span>
+                    <span class="badge-sug-normal text-success fw-bold"><i class="fas fa-check-circle me-1"></i> Seleccionar</span>
+                    <span class="badge-sug-enter badge bg-primary text-white"><i class="fas fa-level-down-alt fa-rotate-90 me-1"></i> [Enter] Aceptar</span>
+                </div>
+            </button>
+        `).join('');
+
+        panelSugerencias.classList.remove('d-none');
+
+        // Click y hover en sugerencia
+        panelSugerencias.querySelectorAll('.boleta-sugerencia-item').forEach(btn => {
+            btn.addEventListener('mouseenter', function () {
+                const idx = parseInt(this.dataset.index, 10);
+                indiceSeleccionado = idx;
+                actualizarSeleccionVisual();
+            });
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const idx = parseInt(this.dataset.index, 10);
+                seleccionarSugerencia(idx);
+            });
+        });
+    }
+
+    function buscarReferentes(query) {
+        const q = (query || '').trim().toLowerCase();
+        if (q.length < 2) {
+            panelSugerencias.innerHTML = '';
+            panelSugerencias.classList.add('d-none');
+            resultadosActuales = [];
+            indiceSeleccionado = -1;
+            return;
+        }
+
+        const palabras = q.split(/\s+/).filter(p => p.length > 0);
+        const resultados = [];
+
+        // 1. Buscar primero en AppState.productos (Excel de políticas cargado)
+        if (AppState.productos && AppState.productos.length > 0) {
+            for (const prod of AppState.productos) {
+                const desc = (prod['DESCRIPCION'] || '').toString().toLowerCase();
+                const coincide = palabras.every(palabra => desc.includes(palabra));
+                if (coincide) {
+                    resultados.push({
+                        descripcion: prod['DESCRIPCION'] || '',
+                        laboratorio: prod['LABORATORIO'] || prod['PROVEEDOR'] || 'LABORATORIO',
+                        codigo: (prod['COD POSU'] || prod['EAN'] || '').toString().replace(/\D/g, ''),
+                        origen: 'Excel Políticas'
+                    });
+                    if (resultados.length >= 3) break; // Máximo 3 líneas solicitadas
+                }
+            }
+        }
+
+        // 2. Si no hay suficientes en el Excel o no hay Excel cargado, buscar en la BD local de medicamentos
+        if (resultados.length < 3) {
+            const fuenteLote = (window.datosLoteGlobal && window.datosLoteGlobal.length > 0)
+                ? window.datosLoteGlobal
+                : (AppState.datosLote || []);
+
+            for (const item of fuenteLote) {
+                const prodName = (item['PRODUCTO'] || '').toString().toLowerCase();
+                const coincide = palabras.every(palabra => prodName.includes(palabra));
+                if (coincide) {
+                    const yaExiste = resultados.some(r => r.descripcion.toLowerCase() === prodName);
+                    if (!yaExiste) {
+                        resultados.push({
+                            descripcion: item['PRODUCTO'] || '',
+                            laboratorio: item['PROVEEDOR'] || 'LABORATORIO',
+                            codigo: (item['COD FARMAVENTA'] || '').toString().replace(/\D/g, ''),
+                            origen: 'Medicamentos'
+                        });
+                        if (resultados.length >= 3) break; // Máximo 3 líneas de referentes
+                    }
+                }
+            }
+        }
+
+        renderizarSugerencias(resultados);
+    }
+
+    let debounceTimer;
+    inputDesc.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        const valor = this.value;
+        debounceTimer = setTimeout(() => {
+            buscarReferentes(valor);
+        }, 150);
+    });
+
+    // Navegación por teclado con Flecha Abajo [↓], Flecha Arriba [↑], Enter [↵] y Escape [Esc]
+    inputDesc.addEventListener('keydown', function (e) {
+        const panelAbierto = !panelSugerencias.classList.contains('d-none') && resultadosActuales.length > 0;
+
+        if (e.key === 'ArrowDown') {
+            if (panelAbierto) {
+                e.preventDefault();
+                if (indiceSeleccionado < resultadosActuales.length - 1) {
+                    indiceSeleccionado++;
+                } else {
+                    indiceSeleccionado = 0; // Vuelve al primer elemento
+                }
+                actualizarSeleccionVisual();
+            } else if ((this.value || '').trim().length >= 2) {
+                // Si estaba cerrado pero hay texto suficiente, reabrir sugerencias
+                e.preventDefault();
+                buscarReferentes(this.value);
+            }
+            return;
+        }
+
+        if (e.key === 'ArrowUp') {
+            if (panelAbierto) {
+                e.preventDefault();
+                if (indiceSeleccionado > 0) {
+                    indiceSeleccionado--;
+                } else {
+                    indiceSeleccionado = resultadosActuales.length - 1; // Va al último
+                }
+                actualizarSeleccionVisual();
+            }
+            return;
+        }
+
+        if (e.key === 'Enter') {
+            if (panelAbierto && indiceSeleccionado >= 0 && indiceSeleccionado < resultadosActuales.length) {
+                // Acepta la opción seleccionada con la flecha abajo
+                e.preventDefault();
+                e.stopPropagation();
+                seleccionarSugerencia(indiceSeleccionado);
+                return;
+            } else {
+                // Si no hay opción seleccionada con flecha o el panel está cerrado, pasar al campo LABORATORIO
+                e.preventDefault();
+                panelSugerencias.classList.add('d-none');
+                indiceSeleccionado = -1;
+                document.getElementById('boletaLab')?.focus();
+                return;
+            }
+        }
+
+        if (e.key === 'Escape') {
+            panelSugerencias.classList.add('d-none');
+            indiceSeleccionado = -1;
+            return;
+        }
+    });
+
+    // Cerrar sugerencias al hacer clic fuera
+    document.addEventListener('click', function (e) {
+        if (!inputDesc.contains(e.target) && !panelSugerencias.contains(e.target)) {
+            panelSugerencias.classList.add('d-none');
+            indiceSeleccionado = -1;
+        }
+    });
+}
+
+function actualizarTotalesBoleta() {
+    const sumaCostos = BoletaManualState.items.reduce((acc, item) => acc + (parseFloat(item.costo) || 0), 0);
+
+    const labelSuma = document.getElementById('boletaSumaCostos');
+    if (labelSuma) {
+        labelSuma.textContent = `S/ ${sumaCostos.toFixed(2)}`;
+    }
+
+    const totalUnidades = BoletaManualState.items.reduce((acc, item) => acc + (parseInt(item.cantidad) || 1), 0);
+    const badgeTotal = document.getElementById('boletaTotalItems');
+    if (badgeTotal) {
+        badgeTotal.textContent = totalUnidades.toString();
+    }
+
+    const inputCliente = document.getElementById('boletaMontoCliente');
+    const montoRaw = (inputCliente ? inputCliente.value : '0').toString().replace(/,/g, '.');
+    const montoCliente = parseFloat(montoRaw) || 0;
+
+    // Calcular diferencia en soles: Monto Cliente - Suma de Costos (Punto de Venta)
+    const diferencia = montoCliente - sumaCostos;
+
+    const inputDiferencia = document.getElementById('boletaDiferenciaSoles');
+    const labelEtiqueta = document.getElementById('boletaDiferenciaEtiqueta');
+    const cardDiferencia = document.getElementById('boletaDiferenciaCard');
+    const labelTitulo = document.getElementById('boletaDiferenciaTitulo');
+    const spanMoneda = document.getElementById('boletaDiferenciaMoneda');
+
+    if (inputDiferencia && !BoletaManualState.diferenciaEditadaManual) {
+        inputDiferencia.value = diferencia.toFixed(2);
+    }
+
+    // Si el monto del cliente no supera la suma de costos (diferencia negativa)
+    const esInsuficiente = (sumaCostos > 0 && montoCliente < sumaCostos);
+
+    if (esInsuficiente) {
+        const falta = Math.abs(diferencia).toFixed(2);
+
+        // Estilos visuales de ERROR (Rojo)
+        if (cardDiferencia) {
+            cardDiferencia.style.setProperty('background-color', '#fef2f2', 'important');
+            cardDiferencia.style.setProperty('border-color', '#f87171', 'important');
+        }
+        if (labelTitulo) {
+            labelTitulo.className = 'form-label small fw-bold text-uppercase text-danger mb-1 d-block text-truncate';
+            labelTitulo.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i> ¡Error! Monto Insuficiente:';
+        }
+        if (spanMoneda) {
+            spanMoneda.className = 'input-group-text bg-white fw-bold text-danger border-danger';
+        }
+        if (inputDiferencia) {
+            inputDiferencia.className = 'form-control fw-bold text-danger fs-6 text-center border-danger is-invalid';
+        }
+        if (inputCliente) {
+            inputCliente.classList.add('border-danger', 'is-invalid');
+        }
+        if (labelEtiqueta) {
+            labelEtiqueta.innerHTML = `<span class="text-danger fw-bold"><i class="fas fa-times-circle me-1"></i> Monto insuficiente (Falta S/ ${falta})</span>`;
+        }
+    } else {
+        // Estilos visuales NORMALES (Verde)
+        if (cardDiferencia) {
+            cardDiferencia.style.setProperty('background-color', '#ecfdf5', 'important');
+            cardDiferencia.style.setProperty('border-color', '#a7f3d0', 'important');
+        }
+        if (labelTitulo) {
+            labelTitulo.className = 'form-label small fw-bold text-uppercase text-success mb-1 d-block text-truncate';
+            labelTitulo.innerHTML = '<i class="fas fa-coins me-1"></i> Diferencia / Vuelto:';
+        }
+        if (spanMoneda) {
+            spanMoneda.className = 'input-group-text bg-white fw-bold text-success';
+        }
+        if (inputDiferencia) {
+            inputDiferencia.className = 'form-control fw-bold text-success fs-6 text-center';
+        }
+        if (inputCliente) {
+            inputCliente.classList.remove('border-danger', 'is-invalid');
+        }
+
+        if (labelEtiqueta) {
+            if (diferencia > 0) {
+                labelEtiqueta.innerHTML = `<span class="text-success"><i class="fas fa-arrow-down me-1"></i> Vuelto a favor del cliente: S/ ${diferencia.toFixed(2)}</span>`;
+            } else if (diferencia === 0) {
+                labelEtiqueta.innerHTML = `<span class="text-secondary"><i class="fas fa-check me-1"></i> Pago exacto / Sin diferencia</span>`;
+            } else {
+                labelEtiqueta.innerHTML = `<span class="text-muted"><i class="fas fa-info-circle me-1"></i> Vuelto a favor del cliente</span>`;
+            }
+        }
+    }
+}
+
+function cambiarCantidadItemBoleta(id, delta) {
+    const item = BoletaManualState.items.find(i => i.id === id);
+    if (!item) return;
+
+    if (!item.costoUnitario) {
+        item.costoUnitario = item.costo / (item.cantidad || 1);
+    }
+
+    const nuevaCant = (parseInt(item.cantidad) || 1) + delta;
+    if (nuevaCant < 1) {
+        // Mínimo 1 unidad (para eliminar se presiona el botón X rojo)
+        return;
+    }
+
+    item.cantidad = nuevaCant;
+    item.costo = item.costoUnitario * nuevaCant;
+    BoletaManualState.diferenciaEditadaManual = false;
+
+    renderTablaBoleta();
+    actualizarTotalesBoleta();
+}
+
+function renderTablaBoleta() {
+    const tbody = document.getElementById('boletaTableBody');
+    if (!tbody) return;
+
+    if (BoletaManualState.items.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-muted py-4">
+                    <i class="fas fa-info-circle me-1"></i> No se han agregado productos a la boleta aún.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = BoletaManualState.items.map((item, index) => {
+        const badgeClass = item.presentacion === 'CAJA' ? 'badge-presentacion-caja' : 'badge-presentacion-blister';
+        const icono = item.presentacion === 'CAJA' ? 'fa-box' : 'fa-tablets';
+        const cant = parseInt(item.cantidad) || 1;
+        const subtotal = parseFloat(item.costo) || 0;
+        const costoUnit = parseFloat(item.costoUnitario) || (subtotal / cant);
+
+        return `
+            <tr>
+                <td class="fw-bold">${index + 1}</td>
+                <td class="text-start fw-bold text-dark">${item.descripcion}</td>
+                <td class="text-start">${item.laboratorio || '-'}</td>
+                <td><span class="${badgeClass}"><i class="fas ${icono} me-1"></i>${item.presentacion}</span></td>
+                <td>
+                    <div class="d-inline-flex align-items-center border rounded bg-white shadow-xs p-0" style="border-color: #cbd5e1 !important;">
+                        <button type="button" class="btn btn-sm btn-light py-0 px-2 fw-bold text-secondary btn-cant-menos" data-id="${item.id}" title="Disminuir cantidad" style="border: none; border-right: 1px solid #cbd5e1; border-radius: 4px 0 0 4px; line-height: 1.5;">
+                            <i class="fas fa-minus" style="font-size: 0.65rem;"></i>
+                        </button>
+                        <span class="fw-bold px-2 text-primary" style="min-width: 28px; text-align: center; font-size: 0.88rem;">
+                            ${cant}
+                        </span>
+                        <button type="button" class="btn btn-sm btn-light py-0 px-2 fw-bold text-primary btn-cant-mas" data-id="${item.id}" title="Aumentar cantidad" style="border: none; border-left: 1px solid #cbd5e1; border-radius: 0 4px 4px 0; line-height: 1.5;">
+                            <i class="fas fa-plus" style="font-size: 0.65rem;"></i>
+                        </button>
+                    </div>
+                </td>
+                <td class="fw-bold text-end pe-3">
+                    <div>S/ ${subtotal.toFixed(2)}</div>
+                    ${cant > 1 ? `<small class="text-muted fw-normal d-block" style="font-size: 0.68rem;">(${cant} x S/ ${costoUnit.toFixed(2)})</small>` : ''}
+                </td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-eliminar-item-boleta" data-id="${item.id}" title="Eliminar ítem">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    tbody.querySelectorAll('.btn-cant-mas').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const id = parseInt(this.dataset.id, 10);
+            cambiarCantidadItemBoleta(id, 1);
+        });
+    });
+
+    tbody.querySelectorAll('.btn-cant-menos').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const id = parseInt(this.dataset.id, 10);
+            cambiarCantidadItemBoleta(id, -1);
+        });
+    });
+
+    tbody.querySelectorAll('.btn-eliminar-item-boleta').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const id = parseInt(this.dataset.id, 10);
+            eliminarItemBoleta(id);
+        });
+    });
+}
+
+function agregarItemBoleta() {
+    const descripcion = document.getElementById('boletaDescripcion').value.trim();
+    const laboratorio = document.getElementById('boletaLab').value.trim();
+    const presentacion = document.getElementById('boletaPresentacion').value;
+    const inputCosto = document.getElementById('boletaCosto');
+    const costoRaw = (inputCosto ? inputCosto.value : '').trim().replace(/,/g, '.');
+    const costoVal = parseFloat(costoRaw);
+
+    const inputCant = document.getElementById('boletaCantidad');
+    let cantVal = parseInt(inputCant ? inputCant.value : 1, 10);
+    if (isNaN(cantVal) || cantVal < 1) cantVal = 1;
+
+    if (!descripcion) {
+        mostrarAlerta('Ingresa o busca la descripción del producto.', 'warning');
+        document.getElementById('boletaDescripcion').focus();
+        return;
+    }
+
+    if (isNaN(costoVal) || costoVal < 0) {
+        mostrarAlerta('Ingresa un costo numérico válido mayor o igual a 0.', 'warning');
+        if (inputCosto) inputCosto.focus();
+        return;
+    }
+
+    // Si ya existe el producto con la misma presentación en la boleta, sumar la cantidad
+    const existente = BoletaManualState.items.find(i => 
+        i.descripcion.toUpperCase() === descripcion.toUpperCase() &&
+        i.presentacion === presentacion
+    );
+
+    if (existente) {
+        existente.cantidad = (parseInt(existente.cantidad) || 1) + cantVal;
+        existente.costoUnitario = costoVal > 0 ? costoVal : existente.costoUnitario;
+        existente.costo = existente.costoUnitario * existente.cantidad;
+        mostrarAlerta(`Se sumaron ${cantVal} unidad(es) a "${descripcion}". Total: ${existente.cantidad}`, 'success');
+    } else {
+        const nuevoItem = {
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            descripcion: descripcion,
+            laboratorio: laboratorio || '-',
+            presentacion: presentacion, // 'CAJA' o 'BLÍSTER'
+            costoUnitario: costoVal,
+            cantidad: cantVal,
+            costo: costoVal * cantVal
+        };
+        BoletaManualState.items.push(nuevoItem);
+        mostrarAlerta('Producto agregado a la boleta. Presiona Enter de nuevo para Imprimir [Doble Enter]', 'success');
+    }
+
+    BoletaManualState.diferenciaEditadaManual = false; // re-evalúa la diferencia automáticamente
+
+    renderTablaBoleta();
+    actualizarTotalesBoleta();
+    limpiarCamposBoleta();
+
+    // Guardar timestamp para permitir impresión inmediata con un segundo Enter
+    window._ultimoEnterTimestampBoleta = Date.now();
+}
+
+function eliminarItemBoleta(id) {
+    BoletaManualState.items = BoletaManualState.items.filter(item => item.id !== id);
+    BoletaManualState.diferenciaEditadaManual = false;
+    renderTablaBoleta();
+    actualizarTotalesBoleta();
+    mostrarAlerta('Producto retirado de la boleta', 'info');
+}
+
+// Vaciar general: boleta + campos del formulario + montos
+function vaciarBoletaGeneral() {
+    const tieneItems = BoletaManualState.items.length > 0;
+    const tieneTextoCampos = (document.getElementById('boletaDescripcion')?.value || '').trim().length > 0 ||
+        (document.getElementById('boletaInputCodigo')?.value || '').trim().length > 0 ||
+        (document.getElementById('boletaCosto')?.value || '').trim().length > 0;
+
+    if (!tieneItems && !tieneTextoCampos) {
+        mostrarAlerta('La boleta y los campos ya están vacíos.', 'info');
+        return;
+    }
+
+    Swal.fire({
+        title: '¿Vaciar boleta y campos? [Ctrl]',
+        text: 'Se limpiarán todos los datos del formulario y se vaciarán los productos agregados a la boleta.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, vaciar todo',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            BoletaManualState.items = [];
+            BoletaManualState.diferenciaEditadaManual = false;
+            const inputCliente = document.getElementById('boletaMontoCliente');
+            if (inputCliente) inputCliente.value = '0.00';
+            const inputDif = document.getElementById('boletaDiferenciaSoles');
+            if (inputDif) inputDif.value = '0.00';
+            renderTablaBoleta();
+            actualizarTotalesBoleta();
+            limpiarCamposBoleta();
+            mostrarAlerta('Boleta y formulario vaciados completamente [Ctrl]', 'success');
+        }
+    });
+}
+
+const vaciarBoleta = vaciarBoletaGeneral;
+
+// ==================== GENERACIÓN DE BOLETA / TICKET ====================
+
+function calcularAlturaTicket80mm(items, archivoNombre) {
+    const printableWidth = 72;
+    const testDoc = new (window.jspdf.jsPDF)({ unit: 'mm', format: [80, 800] });
+    testDoc.setFont('helvetica');
+
+    let y = 6; // margen superior
+    y += 4.5; // FARMACIAS PERUANAS
+    y += 3.8; // GESTOR DE CANJES TECNICOS
+    y += 3.2; // CONTROL OPERATIVO - PUNTO DE VENTA
+    y += 3.5; // BOLETA MANUAL / TICKET DE CANJE
+    y += 2.5; // separador
+    y += 10.5; // RECUADRO DESTACADO: ENTREGADO / RECIBIDO
+    y += 3.0; // separador
+    y += 3.5; // TICKET N°
+    y += 3.5; // FECHA / HORA
+
+    testDoc.setFontSize(7);
+    const archLines = testDoc.splitTextToSize(`POLÍTICA: ${archivoNombre || 'Manual'}`, printableWidth);
+    y += (archLines.length * 3.2) + 1.5;
+
+    y += 3.0; // separador
+    y += 3.5; // Encabezado columnas
+    y += 2.5; // línea sólida
+
+    // Items
+    items.forEach((item, index) => {
+        testDoc.setFontSize(7.5);
+        const itemTitulo = `${index + 1}. ${item.descripcion.toUpperCase()}`;
+        const descLines = testDoc.splitTextToSize(itemTitulo, printableWidth);
+        y += (descLines.length * 3.3);
+
+        testDoc.setFontSize(7);
+        const labText = `[${item.presentacion}] ${item.laboratorio || '-'}`;
+        const labLines = testDoc.splitTextToSize(labText, 48);
+        y += Math.max(labLines.length * 3.0, 3.5) + 1.8;
+    });
+
+    y += 2.0; // separador
+    y += 3.5; // TOTAL PRODUCTOS
+    y += 3.0; // separador
+    y += 4.5; // TOTAL COSTOS
+    y += 4.0; // MONTO CLIENTE
+    y += 2.5; // línea
+    y += 4.5; // DIFERENCIA / VUELTO
+    y += 3.5; // Nota explicativa vuelto / saldo
+    y += 3.5; // separador
+
+    // Firmas
+    y += 4.5; // FIRMAS DE CONFORMIDAD
+    y += 11.0; // Espacio firma DT
+    y += 3.0; // Línea firma DT
+    y += 2.8; // Texto firma DT
+    y += 10.0; // Espacio firma cliente
+    y += 3.0; // Línea firma cliente
+    y += 2.8; // DNI
+    y += 3.5; // Nota informativa copia
+    y += 4.0; // separador
+
+    // Pie
+    y += 3.0; // Doc interno
+    y += 2.8; // Sistema Gestor
+    y += 3.0; // Gracias
+    y += 10.0; // Margen para corte de la ticketera NCR
+
+    return Math.max(Math.ceil(y), 145);
+}
+
+// Función auxiliar para dibujar una copia específica del ticket (ENTREGADO o RECIBIDO)
+function dibujarTicketCopia(doc, tipoCopia, items, info) {
+    const margin = 4;
+    const printableWidth = 72;
+    const rightMargin = 76;
+    const centerX = 40;
+
+    function dibujarSeparador(posY, dashed = true) {
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.25);
+        if (dashed) {
+            doc.setLineDashPattern([1.5, 1], 0);
+        } else {
+            doc.setLineDashPattern([], 0);
+        }
+        doc.line(margin, posY, rightMargin, posY);
+        doc.setLineDashPattern([], 0);
+    }
+
+    let curY = 6;
+
+    // === ENCABEZADO TÉRMICO NCR ===
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.5);
+    doc.text('FARMACIAS PERUANAS', centerX, curY, { align: 'center' });
+    curY += 4.5;
+
+    doc.setFontSize(8);
+    doc.text('GESTOR DE CANJES TECNICOS', centerX, curY, { align: 'center' });
+    curY += 3.8;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.text('CONTROL OPERATIVO - PUNTO DE VENTA', centerX, curY, { align: 'center' });
+    curY += 3.5;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text('BOLETA MANUAL / TICKET DE CANJE', centerX, curY, { align: 'center' });
+    curY += 3.0;
+
+    dibujarSeparador(curY, true);
+    curY += 2.5;
+
+    // === RECUADRO DESTACADO: ENTREGADO vs RECIBIDO ===
+    const esEntregado = tipoCopia === 'ENTREGADO';
+    const tituloCopia = esEntregado ? '*** 1. ENTREGADO ***' : '*** 2. RECIBIDO ***';
+    const descCopia = esEntregado ? '(COPIA PARA EL CLIENTE)' : '(COPIA PARA EL LOCAL / FARMACIA)';
+
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.35);
+    doc.rect(margin, curY, printableWidth, 9.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text(tituloCopia, centerX, curY + 4.2, { align: 'center' });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.text(descCopia, centerX, curY + 7.8, { align: 'center' });
+
+    curY += 11.5;
+    dibujarSeparador(curY, true);
+    curY += 3.5;
+
+    // === DATOS DEL TICKET ===
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.text('TICKET N°:', margin, curY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(info.correlativo, margin + 17, curY);
+    curY += 3.5;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('FECHA:', margin, curY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(info.fechaStr, margin + 11, curY);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('HORA:', margin + 37, curY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(info.horaStr, margin + 46, curY);
+    curY += 3.5;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('POLÍTICA:', margin, curY);
+    doc.setFont('helvetica', 'normal');
+    const archLines = doc.splitTextToSize(info.archivoNombre, printableWidth - 17);
+    doc.text(archLines, margin + 17, curY);
+    curY += (archLines.length * 3.2) + 1.5;
+
+    dibujarSeparador(curY, true);
+    curY += 3.5;
+
+    // === ENCABEZADO DE COLUMNAS ===
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.text('CANT / DESCRIPCIÓN', margin, curY);
+    doc.text('COSTO (S/.)', rightMargin, curY, { align: 'right' });
+    curY += 2.0;
+    dibujarSeparador(curY, false); // línea sólida
+    curY += 3.5;
+
+    // === LISTA DE PRODUCTOS ===
+    items.forEach((item, index) => {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        const cantPrefijo = (item.cantidad && item.cantidad > 1) ? `[x${item.cantidad}] ` : '';
+        const itemTitulo = `${index + 1}. ${cantPrefijo}${item.descripcion.toUpperCase()}`;
+        const descLines = doc.splitTextToSize(itemTitulo, printableWidth);
+        doc.text(descLines, margin, curY);
+        curY += (descLines.length * 3.3);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        const cantDetalle = (item.cantidad && item.cantidad > 1) ? ` (x${item.cantidad})` : '';
+        const labText = `[${item.presentacion}] ${item.laboratorio || '-'}${cantDetalle}`;
+        const labLines = doc.splitTextToSize(labText, 48);
+        doc.text(labLines, margin + 2.5, curY);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.text(`S/ ${item.costo.toFixed(2)}`, rightMargin, curY, { align: 'right' });
+        curY += Math.max(labLines.length * 3.0, 3.5) + 2.0;
+    });
+
+    dibujarSeparador(curY, true);
+    curY += 3.5;
+
+    // Resumen de cantidad
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.text('TOTAL PRODUCTOS:', margin, curY);
+    doc.text(`${items.length}`, rightMargin, curY, { align: 'right' });
+    curY += 3.0;
+
+    dibujarSeparador(curY, true);
+    curY += 4.0;
+
+    // === RESUMEN FINANCIERO ===
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.text('TOTAL COSTOS:', margin, curY);
+    doc.text(`S/ ${info.sumaCostos.toFixed(2)}`, rightMargin, curY, { align: 'right' });
+    curY += 4.5;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text('MONTO DEL CLIENTE:', margin, curY);
+    doc.text(`S/ ${info.montoCliente.toFixed(2)}`, rightMargin, curY, { align: 'right' });
+    curY += 2.5;
+
+    dibujarSeparador(curY, false); // línea sólida
+    curY += 4.5;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    if (info.diferencia >= 0) {
+        doc.text('DIFERENCIA / VUELTO:', margin, curY);
+        doc.text(`S/ ${info.diferencia.toFixed(2)}`, rightMargin, curY, { align: 'right' });
+        curY += 3.5;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.text('(Vuelto a favor del cliente)', margin, curY);
+    } else {
+        doc.text('SALDO POR COBRAR:', margin, curY);
+        doc.text(`S/ ${Math.abs(info.diferencia).toFixed(2)}`, rightMargin, curY, { align: 'right' });
+        curY += 3.5;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.text('** SALDO PENDIENTE A COBRAR', margin, curY);
+    }
+    curY += 3.5;
+
+    dibujarSeparador(curY, true);
+    curY += 4.5;
+
+    // === FIRMAS DE CONFORMIDAD ===
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.text('FIRMAS DE CONFORMIDAD', centerX, curY, { align: 'center' });
+    curY += 11.0;
+
+    // Firma 1: DT / Farmacéutico
+    doc.setLineWidth(0.25);
+    doc.line(14, curY, 66, curY);
+    curY += 3.0;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    const cargoDT = esEntregado ? 'ENTREGADO POR / DT' : 'RECIBIDO EN LOCAL / DT';
+    doc.text(cargoDT, centerX, curY, { align: 'center' });
+    curY += 2.8;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.text('Firma y Sello de Farmacia', centerX, curY, { align: 'center' });
+    curY += 10.0;
+
+    // Firma 2: Cliente
+    doc.line(14, curY, 66, curY);
+    curY += 3.0;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.text('CONFORMIDAD DEL CLIENTE', centerX, curY, { align: 'center' });
+    curY += 2.8;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.text('DNI: _______________________', centerX, curY, { align: 'center' });
+    curY += 3.5;
+
+    // Nota informativa de la copia
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(6.5);
+    const notaCopia = esEntregado ? '* Constancia entregada al cliente.' : '* Constancia para archivo y control del local.';
+    doc.text(notaCopia, centerX, curY, { align: 'center' });
+    curY += 4.0;
+
+    dibujarSeparador(curY, true);
+    curY += 3.5;
+
+    // === PIE DEL TICKET ===
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.text('Documento emitido para control interno.', centerX, curY, { align: 'center' });
+    curY += 2.8;
+    doc.text('Sistema Gestor de Canjes - Mifarma / Inkafarma', centerX, curY, { align: 'center' });
+    curY += 3.0;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.text('*** GRACIAS POR SU ATENCIÓN ***', centerX, curY, { align: 'center' });
+    curY += 8.0;
+}
+
+// Validación: Si el monto de cliente no supera al total/suma de costos de la boleta, mostrar error
+function validarMontoClienteSuficiente(sumaCostos, montoCliente) {
+    if (sumaCostos > 0 && montoCliente < sumaCostos) {
+        const falta = (sumaCostos - montoCliente).toFixed(2);
+        Swal.fire({
+            icon: 'error',
+            title: '¡Error! Monto del cliente insuficiente',
+            html: `
+                <div style="font-size: 14.5px; text-align: left;">
+                    <p class="mb-2 text-danger fw-bold">
+                        <i class="fas fa-exclamation-triangle me-1"></i> El monto del cliente no supera la suma de costos.
+                    </p>
+                    <div class="p-2 mb-2 rounded border" style="background-color: #fef2f2; border-color: #fca5a5 !important;">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Suma de Costos (Total):</span>
+                            <strong class="text-primary">S/ ${sumaCostos.toFixed(2)}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1 text-danger">
+                            <span>Monto entregado:</span>
+                            <strong>S/ ${montoCliente.toFixed(2)}</strong>
+                        </div>
+                        <hr class="my-1">
+                        <div class="d-flex justify-content-between fw-bold text-danger">
+                            <span>Monto faltante por cobrar:</span>
+                            <span>S/ ${falta}</span>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block">
+                        <i class="fas fa-info-circle me-1"></i> El monto ingresado debe ser igual o mayor a la suma de costos (S/ ${sumaCostos.toFixed(2)}) antes de emitir la boleta.
+                    </small>
+                </div>
+            `,
+            confirmButtonText: '<i class="fas fa-edit me-1"></i> Corregir Monto Cliente',
+            confirmButtonColor: '#dc2626'
+        }).then(() => {
+            const inputCliente = document.getElementById('boletaMontoCliente');
+            if (inputCliente) {
+                inputCliente.focus();
+                inputCliente.select();
+            }
+        });
+        return false;
+    }
+    return true;
+}
+
+function imprimirBoletaTicket80mm() {
+    if (BoletaManualState.items.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Boleta vacía',
+            text: 'Debes agregar al menos un producto a la boleta antes de imprimir el ticket.',
+            confirmButtonColor: '#0d6efd'
+        });
+        return;
+    }
+
+    const sumaCostos = BoletaManualState.items.reduce((acc, item) => acc + (parseFloat(item.costo) || 0), 0);
+    const montoRaw = (document.getElementById('boletaMontoCliente')?.value || '0').toString().replace(/,/g, '.');
+    const montoCliente = parseFloat(montoRaw) || 0;
+
+    // Bloquear si el monto no cubre la suma de costos
+    if (!validarMontoClienteSuficiente(sumaCostos, montoCliente)) {
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+
+    const difRaw = (document.getElementById('boletaDiferenciaSoles')?.value || '').toString().replace(/,/g, '.');
+    const diferencia = difRaw !== '' ? (parseFloat(difRaw) || 0) : (montoCliente - sumaCostos);
+
+    const ahora = new Date();
+    const fechaStr = ahora.toLocaleDateString('es-PE');
+    const horaStr = ahora.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const correlativo = `BM-${ahora.getFullYear()}${String(ahora.getMonth() + 1).padStart(2, '0')}${String(ahora.getDate()).padStart(2, '0')}-${String(Math.floor(Math.random() * 900) + 100)}`;
+    const archivoNombre = AppState.archivoActual ? AppState.archivoActual : 'Ingreso Manual / Sin archivo';
+
+    const alturaTotalMm = calcularAlturaTicket80mm(BoletaManualState.items, archivoNombre);
+
+    const info = {
+        correlativo,
+        fechaStr,
+        horaStr,
+        archivoNombre,
+        sumaCostos,
+        montoCliente,
+        diferencia
+    };
+
+    // Crear documento PDF con 80mm de ancho y altura continua calculada
+    const doc = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: [80, alturaTotalMm]
+    });
+
+    // 1RA BOLETA: ENTREGADO (Para entregar al cliente)
+    dibujarTicketCopia(doc, 'ENTREGADO', BoletaManualState.items, info);
+
+    // 2DA BOLETA: RECIBIDO (Para que lo tenga el local)
+    doc.addPage([80, alturaTotalMm]);
+    dibujarTicketCopia(doc, 'RECIBIDO', BoletaManualState.items, info);
+
+    // Descarga y vista previa
+    const nombrePdf = `Ticket_NCR80mm_2Boletas_${correlativo}_${fechaStr.replace(/\//g, '-')}.pdf`;
+    doc.save(nombrePdf);
+
+    try {
+        const blobUrl = doc.output('bloburl');
+        window.open(blobUrl, '_blank');
+    } catch (e) {
+        console.warn('No se pudo abrir automáticamente en nueva pestaña:', e);
+    }
+
+    Swal.fire({
+        icon: 'success',
+        title: '¡2 Boletas Generadas para Imprimir!',
+        html: `
+            <div style="font-size: 13.5px; text-align: left;">
+                <p class="mb-2">Se generó el documento con <strong>2 Boletas consecutivas con los mismos datos</strong>:</p>
+                <div class="p-2 mb-2 rounded border" style="background-color: #ecfdf5; border-color: #a7f3d0 !important;">
+                    <div class="fw-bold text-success"><i class="fas fa-user-check me-1"></i> 1ra Boleta: ENTREGADO</div>
+                    <small class="text-muted d-block ps-3">Para entregar directamente al cliente.</small>
+                </div>
+                <div class="p-2 mb-2 rounded border" style="background-color: #eff6ff; border-color: #bfdbfe !important;">
+                    <div class="fw-bold text-primary"><i class="fas fa-store me-1"></i> 2da Boleta: RECIBIDO</div>
+                    <small class="text-muted d-block ps-3">Para que la tenga el local (archivo y control interno).</small>
+                </div>
+                <p class="text-muted small mb-0 mt-2">
+                    <i class="fas fa-print me-1"></i> Formato NCR 80mm continuo (${alturaTotalMm} mm c/u). Listo para enviar a tu ticketera térmica.
+                </p>
+            </div>
+        `,
+        confirmButtonColor: '#10b981'
+    });
+}
+
+// Función auxiliar para dibujar una página A4 específica (ENTREGADO o RECIBIDO)
+function dibujarPaginaA4(doc, tipoCopia, items, info) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const esEntregado = tipoCopia === 'ENTREGADO';
+    const colorBarra = esEntregado ? [16, 185, 129] : [13, 110, 253]; // Verde cliente, Azul local
+
+    doc.setFillColor(...colorBarra);
+    doc.rect(14, 12, pageWidth - 28, 5, 'F');
+
+    doc.setTextColor(15, 23, 42);
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(15);
+    doc.text('FARMACIAS PERUANAS - GESTIÓN DE CANJES', pageWidth / 2, 23, { align: 'center' });
+
+    doc.setFontSize(11);
+    doc.setTextColor(...colorBarra);
+    const subtituloCopia = esEntregado ? 'COMPROBANTE DE CANJE / BOLETA MANUAL — [1. ENTREGADO - CLIENTE]' : 'COMPROBANTE DE CANJE / BOLETA MANUAL — [2. RECIBIDO - LOCAL]';
+    doc.text(subtituloCopia, pageWidth / 2, 29, { align: 'center' });
+
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    doc.setFont(undefined, 'normal');
+    const notaCopiaA4 = esEntregado ? 'Copia oficial entregada al cliente como constancia de la operación' : 'Copia oficial recibida y archivada para control interno del local / farmacia';
+    doc.text(notaCopiaA4, pageWidth / 2, 34, { align: 'center' });
+
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.5);
+    doc.line(14, 37, pageWidth - 14, 37);
+
+    // Caja de metadatos
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(14, 40, pageWidth - 28, 16, 2, 2, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(14, 40, pageWidth - 28, 16, 2, 2, 'D');
+
+    doc.setFontSize(8);
+    doc.setTextColor(30, 41, 59);
+
+    doc.setFont(undefined, 'bold');
+    doc.text('N° COMPROBANTE:', 18, 46);
+    doc.setFont(undefined, 'normal');
+    doc.text(info.correlativo, 50, 46);
+
+    doc.setFont(undefined, 'bold');
+    doc.text('FECHA Y HORA:', 18, 52);
+    doc.setFont(undefined, 'normal');
+    doc.text(`${info.fechaStr} ${info.horaStr}`, 50, 52);
+
+    doc.setFont(undefined, 'bold');
+    doc.text('ESTADO BOLETA:', 110, 46);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(...colorBarra);
+    doc.text(tipoCopia, 143, 46);
+
+    doc.setTextColor(30, 41, 59);
+    doc.setFont(undefined, 'bold');
+    doc.text('TOTAL ÍTEMS:', 110, 52);
+    doc.setFont(undefined, 'normal');
+    doc.text(`${items.length} producto(s)`, 143, 52);
+
+    const bodyRows = items.map((item, index) => {
+        const cant = item.cantidad || 1;
+        const costoUnit = item.costoUnitario || (item.costo / cant);
+        return [
+            (index + 1).toString(),
+            item.descripcion.toUpperCase(),
+            (item.laboratorio || '-').toUpperCase(),
+            item.presentacion.toUpperCase(),
+            cant.toString(),
+            `S/ ${costoUnit.toFixed(2)}`,
+            `S/ ${item.costo.toFixed(2)}`
+        ];
+    });
+
+    doc.autoTable({
+        startY: 60,
+        head: [['N°', 'DESCRIPCIÓN DEL PRODUCTO', 'LABORATORIO', 'PRESENTACIÓN', 'CANT.', 'P. UNIT', 'TOTAL (S/.)']],
+        body: bodyRows,
+        theme: 'grid',
+        headStyles: {
+            fillColor: colorBarra,
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            fontSize: 8.5,
+            halign: 'center',
+            valign: 'middle'
+        },
+        styles: {
+            fontSize: 8,
+            cellPadding: 2,
+            textColor: [30, 41, 59],
+            valign: 'middle'
+        },
+        columnStyles: {
+            0: { cellWidth: 8, halign: 'center' },
+            1: { cellWidth: 70, halign: 'left' },
+            2: { cellWidth: 40, halign: 'left' },
+            3: { cellWidth: 24, halign: 'center' },
+            4: { cellWidth: 14, halign: 'center', fontStyle: 'bold' },
+            5: { cellWidth: 16, halign: 'right' },
+            6: { cellWidth: 20, halign: 'right', fontStyle: 'bold' }
+        },
+        alternateRowStyles: {
+            fillColor: [248, 250, 252]
+        },
+        margin: { left: 14, right: 14 }
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 6;
+    const summaryBoxWidth = 85;
+    const summaryBoxX = pageWidth - 14 - summaryBoxWidth;
+    const summaryBoxY = finalY;
+
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(summaryBoxX, summaryBoxY, summaryBoxWidth, 28, 2, 2, 'F');
+    doc.setDrawColor(203, 213, 225);
+    doc.roundedRect(summaryBoxX, summaryBoxY, summaryBoxWidth, 28, 2, 2, 'D');
+
+    doc.setFontSize(8.5);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(51, 65, 85);
+
+    doc.text('TOTAL COSTOS:', summaryBoxX + 5, summaryBoxY + 7);
+    doc.text(`S/ ${info.sumaCostos.toFixed(2)}`, summaryBoxX + summaryBoxWidth - 5, summaryBoxY + 7, { align: 'right' });
+
+    doc.text('MONTO DEL CLIENTE:', summaryBoxX + 5, summaryBoxY + 14);
+    doc.text(`S/ ${info.montoCliente.toFixed(2)}`, summaryBoxX + summaryBoxWidth - 5, summaryBoxY + 14, { align: 'right' });
+
+    doc.setDrawColor(203, 213, 225);
+    doc.line(summaryBoxX + 4, summaryBoxY + 18, summaryBoxX + summaryBoxWidth - 4, summaryBoxY + 18);
+
+    doc.setFontSize(9.5);
+    if (info.diferencia >= 0) {
+        doc.setTextColor(4, 120, 87);
+        doc.text('DIFERENCIA / VUELTO:', summaryBoxX + 5, summaryBoxY + 24);
+        doc.text(`S/ ${info.diferencia.toFixed(2)}`, summaryBoxX + summaryBoxWidth - 5, summaryBoxY + 24, { align: 'right' });
+    } else {
+        doc.setTextColor(220, 38, 38);
+        doc.text('SALDO POR COBRAR:', summaryBoxX + 5, summaryBoxY + 24);
+        doc.text(`S/ ${Math.abs(info.diferencia).toFixed(2)}`, summaryBoxX + summaryBoxWidth - 5, summaryBoxY + 24, { align: 'right' });
+    }
+
+    const firmasY = Math.max(summaryBoxY + 40, finalY + 40);
+    if (firmasY < 265) {
+        doc.setDrawColor(148, 163, 184);
+        doc.setLineWidth(0.5);
+
+        doc.line(25, firmasY, 85, firmasY);
+        doc.setFontSize(8);
+        doc.setTextColor(71, 85, 105);
+        doc.setFont(undefined, 'bold');
+        const dtLabel = esEntregado ? 'ENTREGADO POR / DT' : 'RECIBIDO EN LOCAL / DT';
+        doc.text(dtLabel, 55, firmasY + 5, { align: 'center' });
+        doc.setFont(undefined, 'normal');
+        doc.text('Firma y Sello de Farmacia', 55, firmasY + 9, { align: 'center' });
+
+        doc.line(pageWidth - 85, firmasY, pageWidth - 25, firmasY);
+        doc.setFont(undefined, 'bold');
+        doc.text('CONFORMIDAD DEL CLIENTE', pageWidth - 55, firmasY + 5, { align: 'center' });
+        doc.setFont(undefined, 'normal');
+        doc.text('DNI: _______________________', pageWidth - 55, firmasY + 9, { align: 'center' });
+    }
+
+    doc.setFontSize(7);
+    doc.setTextColor(148, 163, 184);
+    const footerMsg = esEntregado
+        ? 'Boleta de Control Interno — 1ra Copia: ENTREGADO (Cliente) — Sistema Gestor de Canjes.'
+        : 'Boleta de Control Interno — 2da Copia: RECIBIDO (Local) — Sistema Gestor de Canjes.';
+    doc.text(footerMsg, pageWidth / 2, 287, { align: 'center' });
+}
+
+// Formato alternativo en Hoja A4 estándar (también emite 2 copias: ENTREGADO y RECIBIDO)
+function imprimirBoletaA4() {
+    if (BoletaManualState.items.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Boleta vacía',
+            text: 'Debes agregar al menos un producto a la boleta antes de imprimir.',
+            confirmButtonColor: '#0d6efd'
+        });
+        return;
+    }
+
+    const sumaCostos = BoletaManualState.items.reduce((acc, item) => acc + (parseFloat(item.costo) || 0), 0);
+    const montoRaw = (document.getElementById('boletaMontoCliente')?.value || '0').toString().replace(/,/g, '.');
+    const montoCliente = parseFloat(montoRaw) || 0;
+
+    // Bloquear si el monto no cubre la suma de costos
+    if (!validarMontoClienteSuficiente(sumaCostos, montoCliente)) {
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+
+    const difRaw = (document.getElementById('boletaDiferenciaSoles')?.value || '').toString().replace(/,/g, '.');
+    const diferencia = difRaw !== '' ? (parseFloat(difRaw) || 0) : (montoCliente - sumaCostos);
+
+    const ahora = new Date();
+    const fechaStr = ahora.toLocaleDateString('es-PE');
+    const horaStr = ahora.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const correlativo = `BM-${ahora.getFullYear()}${String(ahora.getMonth() + 1).padStart(2, '0')}${String(ahora.getDate()).padStart(2, '0')}-${String(Math.floor(Math.random() * 900) + 100)}`;
+    const archivoNombre = AppState.archivoActual ? AppState.archivoActual : 'Ingreso Manual / Sin archivo';
+
+    const info = {
+        correlativo,
+        fechaStr,
+        horaStr,
+        archivoNombre,
+        sumaCostos,
+        montoCliente,
+        diferencia
+    };
+
+    // Página 1: ENTREGADO (Copia Cliente)
+    dibujarPaginaA4(doc, 'ENTREGADO', BoletaManualState.items, info);
+
+    // Página 2: RECIBIDO (Copia Local)
+    doc.addPage('a4', 'p');
+    dibujarPaginaA4(doc, 'RECIBIDO', BoletaManualState.items, info);
+
+    const nombrePdf = `Boleta_A4_2Copias_${correlativo}_${fechaStr.replace(/\//g, '-')}.pdf`;
+    doc.save(nombrePdf);
+
+    try {
+        const blobUrl = doc.output('bloburl');
+        window.open(blobUrl, '_blank');
+    } catch (e) {
+        console.warn('No se pudo abrir automáticamente en nueva pestaña:', e);
+    }
+
+    Swal.fire({
+        icon: 'success',
+        title: '¡Boleta A4 (2 Copias) Generada!',
+        html: `
+            <div style="font-size: 13.5px; text-align: left;">
+                <p class="mb-2">Se generó el PDF en formato A4 con <strong>2 Copias completas</strong>:</p>
+                <ul class="mb-2 ps-3">
+                    <li><strong>Página 1:</strong> ENTREGADO (Para el Cliente)</li>
+                    <li><strong>Página 2:</strong> RECIBIDO (Para el Local)</li>
+                </ul>
+                <p class="text-muted small mb-0">Se descargó <code>${nombrePdf}</code> y se abrió la vista previa.</p>
+            </div>
+        `,
+        confirmButtonColor: '#0d6efd'
+    });
+}
+
+// La función principal por defecto genera el Ticket Térmico de 80mm
+function imprimirBoletaPDF() {
+    imprimirBoletaTicket80mm();
+}
+
+// ==================== INICIALIZACIÓN ====================
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    // Carga Automática de la BD de Lotes desde el archivo JS (bypass CORS offline local)
+    if (window.datosLoteGlobal) {
+        AppState.datosLote = window.datosLoteGlobal;
+    } else {
+        console.warn("Base de datos de lotes no encontrada automáticamente. Comprueba el archivo .js");
+    }
+
+    fileModal = new bootstrap.Modal(document.getElementById('fileModal'), {
+        backdrop: 'static',
+        keyboard: false
+    });
+
+    deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    exportModal = new bootstrap.Modal(document.getElementById('exportModal'));
+
+    const fileModalEl = document.getElementById('fileModal');
+    if (fileModalEl) {
+        // Al abrir: Si ya hay otro modal abierto (como Boleta Manual), elevar z-index del modal y backdrop
+        fileModalEl.addEventListener('show.bs.modal', function () {
+            const modalBoleta = document.getElementById('modalBoletaManual');
+            if (modalBoleta && modalBoleta.classList.contains('show')) {
+                fileModalEl.style.zIndex = '1070';
+                setTimeout(() => {
+                    const backdrops = document.querySelectorAll('.modal-backdrop');
+                    if (backdrops.length > 1) {
+                        backdrops[backdrops.length - 1].style.zIndex = '1065';
+                    }
+                }, 15);
+            }
+        });
+
+        // Al cerrar: Restaurar scroll y estado de modal previo
+        fileModalEl.addEventListener('hidden.bs.modal', function () {
+            fileModalEl.style.zIndex = '';
+            const modalBoleta = document.getElementById('modalBoletaManual');
+            if (modalBoleta && modalBoleta.classList.contains('show')) {
+                document.body.classList.add('modal-open');
+                modalBoleta.focus();
+            }
+        });
+
+        // Validar cierre obligatorio solo si no hay ningún archivo cargado y está en bienvenida
+        fileModalEl.addEventListener('hide.bs.modal', function (e) {
+            const fileInput = document.getElementById('fileInput');
+            const enBienvenida = !document.getElementById('welcomeScreen').classList.contains('d-none');
+            if (enBienvenida && !AppState.archivoActual && (!fileInput || !fileInput.files.length)) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Archivo requerido',
+                    text: 'Debes seleccionar tu archivo Excel para continuar.',
+                    confirmButtonColor: '#009739'
+                });
+            }
+        });
+    }
+
+    document.getElementById('btnToggleLote')?.addEventListener('click', togglePanelLote);
+
+    document.addEventListener('keydown', function (e) { if (e.key === 'F2') { e.preventDefault(); togglePanelLote(); } });
+
+    // === NAVEGACIÓN ===
+
+    document.getElementById('btnNuevoArchivo').addEventListener('click', function () {
+        fileModal.show();
+    });
+
+    document.getElementById('btnUltimoArchivo').addEventListener('click', function () {
+        cargarDatosLocales();
+        actualizarTabla();
+        document.getElementById('welcomeScreen').classList.add('d-none');
+        document.getElementById('mainApp').classList.remove('d-none');
+    });
+
+    document.getElementById('btnVolverInicio').addEventListener('click', function () {
+        Swal.fire({
+            title: '¿Deseas volver al inicio?',
+            text: 'Se perderán los cambios no guardados',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, volver',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#009739',
+            cancelButtonColor: '#d33'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('welcomeScreen').classList.remove('d-none');
+                document.getElementById('mainApp').classList.add('d-none');
+                limpiarFormulario();
+                actualizarTabla();
+            }
+        });
+    });
+
+    document.getElementById('btnCambiarArchivo').addEventListener('click', function () {
+        fileModal.show();
+    });
+
+    // === BÚSQUEDA Y GUARDADO ===
+
+    document.getElementById('btnBuscar').addEventListener('click', buscarProducto);
+
+    document.getElementById('inputCodigo').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            buscarProducto();
+            e.preventDefault();
+        }
+    });
+
+    document.getElementById('btnGuardar').addEventListener('click', guardarProducto);
+
+    document.getElementById('btnCopiarFicha').addEventListener('click', function () {
+        const descripcion = document.getElementById('labelDescripcion').value.trim();
+        const laboratorio = document.getElementById('labelLab').value.trim();
+
+        // ✅ VALIDACIÓN REAL
+        if (!descripcion || !laboratorio || descripcion === 'Esperando búsqueda...') {
+            Swal.fire({
+                icon: 'warning',
+                title: '⚠️ Sin producto seleccionado',
+                text: 'Primero busca un producto válido para analizar.',
+                confirmButtonColor: '#009739'
+            });
+            return; // 🚫 NO sigue
+        }
+
+
+        Swal.fire({
+            title: '🧠 ¿Quieres profundizar la información?',
+            html: `
+        <div style="font-size:14px; text-align:left; line-height:1.5;">
+            Se abrirá ChatGPT con el prompt listo.<br><br>
+
+            <b>👉 Pasos:</b>
+            <ol style="margin-top:5px; padding-left:18px;">
+                <li>Haz clic en <b>“Sí, continuar”</b></li>
+                <li>Presiona <b>Ctrl + V</b></li>
+                <li>O clic izquierdo → <b>Pegar</b> en ChatGPT</li>
+            </ol>
+        </div>
+    `,
+
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '✅ Sí, continuar',
+            cancelButtonText: '❌ Cancelar',
+            confirmButtonColor: '#009739',
+            cancelButtonColor: '#d33'
+        }).then((result) => {
+
+            if (result.isConfirmed) {
+                abrirChatGPTConPrompt();
+            }
+
+        });
+
+    });
+    function abrirChatGPTConPrompt() {
+
+        const descripcion = document.getElementById('labelDescripcion').value.trim();
+        const laboratorio = document.getElementById('labelLab').value.trim();
+
+        if (!descripcion || !laboratorio) {
+            Swal.fire({
+                icon: 'warning',
+                title: '⚠️ Falta información',
+                text: 'Primero busca un producto'
+            });
+            return;
+        }
+
+        const prompt = `
+Eres un PROFESIONAL FARMACÉUTICO DEL PERÚ, con formación técnica y científica, y experiencia en farmacia comunitaria y hospitalaria.
+
+Tu función es EDUCAR y ORIENTAR sobre productos farmacéuticos en general, incluyendo:
+
+• Medicamentos (éticos y OTC)
+• Productos dermatológicos
+• Higiene personal
+• Fórmulas infantiles y nutricionales
+• Pañales y productos para bebés
+• Suplementos y vitaminas
+• Dispositivos médicos simples
+
+Te basas en:
+• Vademécums
+• Fichas técnicas oficiales
+• Práctica farmacéutica en Perú y Latinoamérica
+
+⚠️ RESTRICCIONES IMPORTANTES:
+- NO realizas diagnóstico
+- NO prescribes tratamientos personalizados
+- NO reemplazas la evaluación médica
+- NO fomentas la automedicación irresponsable
+
+Tu enfoque es SIEMPRE el uso seguro, racional e informado.
+
+═══════════════════════════════════════════════════════════════
+🔍 REGLA CLAVE (CRÍTICA)
+═══════════════════════════════════════════════════════════════
+
+Antes de responder:
+1. IDENTIFICA el tipo de producto:
+
+- Si es medicamento → usa FORMATO FARMACOLÓGICO COMPLETO
+- Si NO es medicamento → usa FORMATO ADAPTADO
+
+NO mezclar formatos.
+
+═══════════════════════════════════════════════════════════════
+💊 FORMATO 1: MEDICAMENTOS
+═══════════════════════════════════════════════════════════════
+
+MEDICAMENTO:
+${descripcion}
+
+LABORATORIO:
+${laboratorio}
+
+GRUPO FARMACOLÓGICO:
+
+¿PARA QUÉ SIRVE?
+
+DOSIFICACIÓN ORIENTATIVA (USO CIENTÍFICO):
+
+- Adultos:
+  • Dosis habitual
+  • Frecuencia
+  • Dosis máxima diaria
+  • Tiempo máximo de uso
+
+- Adulto mayor:
+  • Ajuste de dosis
+  • Riesgos
+
+- Adolescentes:
+  • Uso permitido o no
+  • Ajuste general
+
+- Niños:
+  • Dosis por peso (mg/kg)
+  • Frecuencia
+  • Dosis máxima
+
+- Lactantes:
+  • Indicar claramente si está permitido
+
+⚠️ ADVERTENCIA DE DOSIS:
+- Riesgos por sobredosis
+- No acortar intervalos
+- No duplicar dosis
+- No combinar con mismo principio activo
+
+REACCIONES ADVERSAS MÁS FRECUENTES:
+
+CONTRAINDICACIONES:
+
+USO EN GRUPOS ESPECIALES:
+- Gestantes
+- Lactancia
+- Enfermedad renal
+- Enfermedad hepática
+
+GRUPOS DE RIESGO:
+- Asmáticos
+- Alérgicos a AINEs (si aplica)
+- Otros
+
+INTERACCIONES:
+- Alimentos
+- Alcohol
+- Suplementos
+
+RECOMENDACIONES FARMACÉUTICAS:
+- Consejos prácticos
+- Señales de alerta
+- Prevención de errores
+
+📢 AVISO:
+"Esta información es educativa y no reemplaza la evaluación de un profesional de salud."
+
+═══════════════════════════════════════════════════════════════
+🧴 FORMATO 2: PRODUCTOS NO FARMACOLÓGICOS
+═══════════════════════════════════════════════════════════════
+
+PRODUCTO:
+${descripcion}
+
+LABORATORIO:
+${laboratorio}
+
+TIPO DE PRODUCTO:
+
+¿QUÉ CONTIENE?
+• Componentes principales
+• Tecnología relevante
+
+¿PARA QUÉ SIRVE?
+
+MODO DE USO:
+• Cantidad
+• Frecuencia
+• Aplicación correcta
+
+ESPECIFICACIONES SEGÚN TIPO:
+
+👶 PAÑALES:
+• Peso
+• Etapa
+• Recomendación de cambio
+
+🧴 DERMOCOSMÉTICOS:
+• Tipo de piel
+• Frecuencia
+
+🍼 FÓRMULAS:
+• Edad
+• Cantidad
+• Advertencias
+
+⚠️ ADVERTENCIAS:
+
+REACCIONES POSIBLES:
+
+CONTRAINDICACIONES:
+
+USO EN GRUPOS ESPECIALES:
+
+INTERACCIONES (si aplica):
+
+RECOMENDACIONES FARMACÉUTICAS:
+
+📢 AVISO:
+"Esta información es educativa y no reemplaza la evaluación de un profesional de salud."
+
+═══════════════════════════════════════════════════════════════
+🎯 OBJETIVO FINAL:
+Brindar información CLARA, SEGURA, PRÁCTICA y basada en evidencia.
+`;
+
+        // Copiar automáticamente
+        navigator.clipboard.writeText(prompt);
+
+        // Abrir ChatGPT
+        window.open('https://chat.openai.com/', '_blank');
+
+        Swal.fire({
+            icon: 'success',
+            title: '✅ Prompt copiado',
+            text: 'Ahora solo pega (Ctrl + V) en ChatGPT',
+            timer: 2500,
+            showConfirmButton: false
+        });
+    }
+
+    // === COPIAR FICHA DEL MEDICAMENTO ===
+
+    async function copiarFichaMedicamento() {
+        const descripcion = document.getElementById('labelDescripcion').value.trim();
+        const laboratorio = document.getElementById('labelLab').value.trim();
+
+        if (!descripcion || !laboratorio) {
+            Swal.fire({
+                icon: 'warning',
+                title: '⚠️ Faltan datos',
+                text: 'Primero busca un producto para obtener la descripción y laboratorio.',
+                confirmButtonColor: '#009739'
+            });
+            return;
+        }
+
+
+        try {
+            await navigator.clipboard.writeText(promptFarmaceutico);
+
+            Swal.fire({
+                icon: 'success',
+                title: '✅ ¡Copiado al portapapeles!',
+                html: `
+                        <div style="text-align: left; font-size: 14px;">
+                            <p><strong>Producto:</strong> ${descripcion}</p>
+                            <p><strong>Laboratorio:</strong> ${laboratorio}</p>
+                            <hr>
+                            <p style="color: #666;">Ahora puedes pegarlo (Ctrl+V) en ChatGPT u otra IA para obtener información farmacéutica completa (medicamentos, dermocosméticos, pañales, fórmulas, etc.).</p>
+                        </div>
+                    `,
+                confirmButtonColor: '#009739',
+                confirmButtonText: 'Entendido'
+            });
+        } catch (error) {
+            console.error('Error al copiar:', error);
+            mostrarAlerta('No se pudo copiar al portapapeles. Intenta de nuevo.', 'error');
+        }
+    }
+
+    // === CARGA DE ARCHIVOS ===
+
+    document.getElementById('btnCargarArchivo').addEventListener('click', function () {
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput.files.length > 0) {
+            procesarArchivoExcel(fileInput.files[0]);
+        } else {
+            mostrarAlerta('Selecciona un archivo', 'warning');
+        }
+    });
+
+    document.getElementById('fileInput').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file) {
+            const allowedExtensions = ['xlsx', 'xls', 'xlsb', 'ods'];
+            const extension = file.name.split('.').pop().toLowerCase();
+
+            if (!allowedExtensions.includes(extension)) {
+                mostrarAlerta('Solo se permiten archivos Excel (.xlsx, .xls, .ods)', 'error');
+                e.target.value = '';
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                mostrarAlerta('El archivo es demasiado grande (máximo 5MB)', 'error');
+                e.target.value = '';
+            }
+        }
+    });
+
+    // === ELIMINACIÓN ===
+
+    document.getElementById('btnEliminarTodo').addEventListener('click', eliminarTodo);
+    document.getElementById('btnConfirmDelete').addEventListener('click', eliminarFila);
+
+    // === FILTROS ===
+
+    document.getElementById('btnAplicarFiltro').addEventListener('click', aplicarFiltros);
+    document.getElementById('btnLimpiarFiltros').addEventListener('click', limpiarFiltros);
+
+    // === EXPORTACIÓN (Botones Principales) ===
+
+    document.getElementById('btnExportarPdf').addEventListener('click', () => exportModal.show());
+    document.getElementById('btnExportarPdf2').addEventListener('click', () => exportModal.show());
+
+    document.getElementById('btnExportarExcel').addEventListener('click', exportarExcel);
+    document.getElementById('btnExportarExcel2').addEventListener('click', exportarExcel);
+
+    // === EXPORTACIÓN (Botones Dentro del Modal) ===
+
+    document.getElementById('optPdfExcepcional').addEventListener('click', exportarPdfExcepcional);
+    document.getElementById('optPdfNoTiene').addEventListener('click', exportarPdfNoTiene);
+    document.getElementById('optPdfCanje').addEventListener('click', exportarPdfCanje);
+    document.getElementById('optPdfTodo').addEventListener('click', exportarPdfTodo);
+
+    // === FORMATO DE FECHAS (Inputs principales) ===
+
+    ['inputFecha', 'filtroFecha', 'filtroUrgente'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', function () {
+                el.value = el.value.replace(/\D/g, '').slice(0, 4);
+            });
+            el.addEventListener('blur', function () {
+                formatoMmAaaa(el);
+            });
+        }
+    });
+
+    // === FORMATO INPUT EXPORTAR ===
+
+    const inputExportUrgente = document.getElementById('inputExportUrgente');
+
+    inputExportUrgente.addEventListener('input', function (e) {
+        let value = this.value.replace(/\D/g, '');
+
+        if (value.length >= 2) {
+            let mes = parseInt(value.substring(0, 2));
+            if (mes === 0 || mes > 12) {
+                this.value = '';
+                return;
+            }
+        }
+
+        if (value.length === 4) {
+            let mes = value.substring(0, 2);
+            let anio = value.substring(2, 4);
+            this.value = `${mes}/20${anio}`;
+        } else {
+            this.value = value;
+        }
+    });
+
+    inputExportUrgente.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('optPdfCanje').click();
+        }
+    });
+
+    // === NAVEGACIÓN CON ENTER (Formulario Principal) ===
+
+    document.getElementById('inputFecha').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('inputResponsable').focus();
+        }
+    });
+
+    document.getElementById('inputResponsable').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('inputEntero').focus();
+        }
+    });
+
+    document.getElementById('inputEntero').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('inputFraccion').focus();
+        }
+    });
+
+    document.getElementById('inputFraccion').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('btnGuardar').click();
+        }
+    });
+
+    // === SELECCIÓN AUTOMÁTICA ===
+
+    ['inputCodigo', 'inputResponsable', 'inputEntero', 'inputFraccion'].forEach(function (id) {
+        const campo = document.getElementById(id);
+        if (campo) {
+            campo.addEventListener('focus', function () {
+                if (this.value && this.value.trim().length > 0) {
+                    this.select();
+                }
+            });
+        }
+    });
+
+
+    // === SISTEMA DE ATAJOS DE TECLADO POS (F1, Alt, Ctrl, Doble Enter) ===
+    let ctrlStandalone = false;
+
+    document.addEventListener('keydown', function (e) {
+        const modalBoleta = document.getElementById('modalBoletaManual');
+        const estaEnBoletaManual = modalBoleta && modalBoleta.classList.contains('show');
+
+        // 1. ATAJO F1: SELECCIONAR BUSCADOR DE CÓDIGO
+        if (e.key === 'F1') {
+            e.preventDefault();
+            if (estaEnBoletaManual) {
+                if (!verificarExcelCargadoBoleta(true)) {
+                    return;
+                }
+                const inputBoletaCod = document.getElementById('boletaInputCodigo');
+                if (inputBoletaCod) {
+                    inputBoletaCod.focus();
+                    inputBoletaCod.select();
+                    mostrarAlerta('Buscador Boleta Manual [F1]', 'info');
+                }
+            } else {
+                const inputCodigo = document.getElementById('inputCodigo');
+                if (inputCodigo) {
+                    inputCodigo.value = '';
+                    inputCodigo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => {
+                        inputCodigo.focus();
+                        inputCodigo.select();
+                    }, 350);
+                    mostrarAlerta('Listo para escanear producto', 'info');
+                }
+            }
+            return;
+        }
+
+        // Si no está en Boleta Manual, no interceptar los demás atajos
+        if (!estaEnBoletaManual) return;
+
+        // Si no hay Excel cargado en Boleta Manual y pulsa teclas de acción, alertar
+        if (!AppState.productos || AppState.productos.length === 0) {
+            if (e.key === 'Alt' || e.key === 'Control' || e.key === 'Enter') {
+                e.preventDefault();
+                verificarExcelCargadoBoleta(true);
+                return;
+            }
+        }
+
+        // 2. ATAJO ALT: LIMPIAR CAMPOS
+        if (e.key === 'Alt') {
+            e.preventDefault();
+            limpiarCamposBoleta();
+            mostrarAlerta('Campos limpiados [Alt]', 'info');
+            return;
+        }
+
+        // 3. TRACKING PARA CTRL (VACIAR BOLETA Y CAMPOS EN GENERAL)
+        if (e.key === 'Control') {
+            ctrlStandalone = true;
+        } else if (e.ctrlKey) {
+            // Si presiona otra tecla mientras Ctrl está presionado (ej. Ctrl+C), no es standalone
+            ctrlStandalone = false;
+        }
+
+        // 4. ATAJO DOBLE ENTER: IMPRIMIR TICKET 80mm
+        if (e.key === 'Enter') {
+            const now = Date.now();
+            const diff = now - (window._ultimoEnterTimestampBoleta || 0);
+            if (diff > 0 && diff < 750 && BoletaManualState.items.length > 0) {
+                e.preventDefault();
+                window._ultimoEnterTimestampBoleta = 0;
+                imprimirBoletaPDF();
+                return;
+            }
+            window._ultimoEnterTimestampBoleta = now;
+        }
+    });
+
+    // Keyup para detectar si la tecla Ctrl fue soltada sola (sin combinación)
+    document.addEventListener('keyup', function (e) {
+        const modalBoleta = document.getElementById('modalBoletaManual');
+        const estaEnBoletaManual = modalBoleta && modalBoleta.classList.contains('show');
+
+        if (estaEnBoletaManual && e.key === 'Control' && ctrlStandalone) {
+            ctrlStandalone = false;
+            vaciarBoletaGeneral();
+        }
+    });
+
+    // === PREVENCIÓN DE CIERRE ===
+
+    window.addEventListener('beforeunload', function (e) {
+        if (AppState.listaCanjes.length > 0 || AppState.archivoActual || BoletaManualState.items.length > 0) {
+            const mensaje = "¿Estás seguro de salir o recargar? Se perderán los datos no guardados.";
+            e.preventDefault();
+            e.returnValue = mensaje;
+            return mensaje;
+        }
+    });
+
+    // === EVENT LISTENERS PARA BOLETA MANUAL ===
+
+    document.getElementById('btnBoletaManualWelcome')?.addEventListener('click', abrirModalBoletaManual);
+    document.getElementById('btnBoletaManualHeader')?.addEventListener('click', abrirModalBoletaManual);
+    document.getElementById('btnBoletaManualBarra')?.addEventListener('click', abrirModalBoletaManual);
+
+    document.getElementById('btnBoletaCargarExcel')?.addEventListener('click', () => {
+        fileModal.show();
+    });
+
+    document.getElementById('btnBoletaBuscar')?.addEventListener('click', buscarProductoBoleta);
+
+    // Validación estricta: Solo aceptar números (0-9) en Código POSU o EAN
+    const inputCodigo = document.getElementById('boletaInputCodigo');
+    if (inputCodigo) {
+        inputCodigo.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g, '');
+        });
+        inputCodigo.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                buscarProductoBoleta();
+                return;
+            }
+            if (!/[0-9]/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
+        inputCodigo.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const textoPegado = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+            const soloNumeros = textoPegado.replace(/\D/g, '');
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            this.value = this.value.substring(0, start) + soloNumeros + this.value.substring(end);
+            this.selectionStart = this.selectionEnd = start + soloNumeros.length;
+        });
+    }
+
+    // Inicializar el autocompletado asistente de referentes para la Descripción
+    configurarAutocompletadoDescripcion();
+
+    // Bloqueo estricto: Si se cliquea o enfoca cualquier cuadrillo sin Excel cargado, exigir recarga de Excel
+    const modalBoletaEl = document.getElementById('modalBoletaManual');
+    if (modalBoletaEl) {
+        // Interceptar cualquier clic dentro del cuerpo de las 2 pantallas (cuadrillos)
+        modalBoletaEl.querySelector('.modal-body')?.addEventListener('click', function (e) {
+            if (!AppState.productos || AppState.productos.length === 0) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (document.activeElement && document.activeElement.blur) {
+                    document.activeElement.blur();
+                }
+                verificarExcelCargadoBoleta(true);
+            }
+        }, true);
+
+        // Interceptar botones de imprimir en el footer si no hay Excel
+        ['btnImprimirBoletaA4', 'btnImprimirBoletaPdf'].forEach(id => {
+            document.getElementById(id)?.addEventListener('click', function (e) {
+                if (!AppState.productos || AppState.productos.length === 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    verificarExcelCargadoBoleta(true);
+                }
+            }, true);
+        });
+    }
+
+    const cuadrillosBoleta = [
+        'boletaInputCodigo', 'btnBoletaBuscar', 'boletaDescripcion', 'btnBoletaLimpiarDesc',
+        'boletaLab', 'boletaPresentacion', 'boletaCantidad', 'btnBoletaCantMenosForm', 'btnBoletaCantMasForm', 'boletaCosto',
+        'btnBoletaLimpiarCampos', 'btnBoletaAgregar', 'btnBoletaVaciar',
+        'boletaMontoCliente', 'boletaDiferenciaSoles',
+        'btnImprimirBoletaA4', 'btnImprimirBoletaPdf'
+    ];
+
+    cuadrillosBoleta.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('focus', function (e) {
+                if (!verificarExcelCargadoBoleta(true)) {
+                    this.blur();
+                }
+            });
+            el.addEventListener('click', function (e) {
+                if (!verificarExcelCargadoBoleta(true)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.blur();
+                }
+            });
+        }
+    });
+
+    // Control de cantidad en el formulario (+ / -)
+    document.getElementById('btnBoletaCantMenosForm')?.addEventListener('click', function () {
+        const inputCant = document.getElementById('boletaCantidad');
+        if (inputCant) {
+            let val = parseInt(inputCant.value, 10) || 1;
+            if (val > 1) inputCant.value = val - 1;
+        }
+    });
+
+    document.getElementById('btnBoletaCantMasForm')?.addEventListener('click', function () {
+        const inputCant = document.getElementById('boletaCantidad');
+        if (inputCant) {
+            let val = parseInt(inputCant.value, 10) || 1;
+            inputCant.value = val + 1;
+        }
+    });
+
+    document.getElementById('btnBoletaLimpiarCampos')?.addEventListener('click', limpiarCamposBoleta);
+    document.getElementById('btnBoletaAgregar')?.addEventListener('click', agregarItemBoleta);
+    document.getElementById('btnBoletaVaciar')?.addEventListener('click', vaciarBoletaGeneral);
+    document.getElementById('btnImprimirBoletaPdf')?.addEventListener('click', imprimirBoletaPDF);
+    document.getElementById('btnImprimirBoletaA4')?.addEventListener('click', imprimirBoletaA4);
+
+    // Sanitización numérica estricta y cálculo en vivo
+    ['boletaCosto', 'boletaMontoCliente', 'boletaDiferenciaSoles'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', function () {
+                this.value = sanitizarNumeroDecimal(this.value);
+                if (id === 'boletaMontoCliente') {
+                    BoletaManualState.diferenciaEditadaManual = false;
+                    actualizarTotalesBoleta();
+                } else if (id === 'boletaDiferenciaSoles') {
+                    BoletaManualState.diferenciaEditadaManual = true;
+                }
+            });
+        }
+    });
+
+
+    document.getElementById('boletaLab')?.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('boletaCosto')?.focus();
+        }
+    });
+
+    document.getElementById('boletaCosto')?.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            agregarItemBoleta();
+        }
+    });
+
+    // === INICIALIZACIÓN FINAL ===
+
+    localStorage.clear();
+    localStorage.removeItem("archivoPolitica");
+    verificarUltimoArchivo();
+    actualizarTabla();
+});
