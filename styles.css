@@ -4,6 +4,18 @@
     --inkafarma-orange-light: #040fad; 
     --border-strong: #aeb4ba;
     --border-light: #c4c9ce;
+    --img-canjes-3d:
+        url('../../../../.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/pharmacy_report_illustration_1794455326612.jpg'),
+        url('file:///C:/Users/USUARIO/.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/pharmacy_report_illustration_1794455326612.jpg'),
+        url('../../../../.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/canjes_opt.jpg');
+    --img-boleta-3d:
+        url('../../../../.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/pharmacy_checkout_3d_1794455329319.jpg'),
+        url('file:///C:/Users/USUARIO/.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/pharmacy_checkout_3d_1794455329319.jpg'),
+        url('../../../../.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/boleta_opt.jpg');
+    --bg-futuristic-pharmacy:
+        url('../../../../.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/futuristic_pharmacy_bg_1794455322482.jpg'),
+        url('file:///C:/Users/USUARIO/.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/futuristic_pharmacy_bg_1794455322482.jpg'),
+        url('../../../../.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/bg_opt.jpg');
 }  
   
 * {  
@@ -54,40 +66,339 @@ body {
 }  
   
 /* =========================================================
-   PANTALLA DE BIENVENIDA
+   PANTALLA DE BIENVENIDA (FARMACIA FUTURISTA 3D - PC WIDESCREEN)
    ========================================================= */
 
 .welcome-screen {  
     min-height: 100vh;  
+    width: 100%;
     display: flex;  
     flex-direction: column;  
     align-items: center;  
     justify-content: center;  
-    padding: 15px;  
+    padding: 24px 32px;  
     text-align: center;  
-}  
-  
+    background-color: #0b1622;
+    background-image:
+        radial-gradient(circle at 50% 42%, rgba(12, 26, 42, 0.35) 0%, rgba(7, 15, 26, 0.72) 100%),
+        var(--bg-futuristic-pharmacy);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+}
+
+.futuristic-welcome-wrapper {
+    max-width: 980px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    z-index: 2;
+}
+
+.futuristic-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.futuristic-title-banner {
+    background: linear-gradient(180deg, rgba(10, 25, 58, 0.92) 0%, rgba(14, 34, 76, 0.95) 100%);
+    border: 1.5px solid rgba(56, 189, 248, 0.45);
+    border-radius: 16px;
+    padding: 12px 38px;
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.55),
+        0 0 22px rgba(56, 189, 248, 0.25),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
 .welcome-title {  
-    font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;  
-    font-size: clamp(1.1rem, 2.2vw, 1.6rem);  
-    font-weight: 700 !important;  
-    color: var(--inkafarma-orange);  
+    font-family: 'Segoe UI', 'Poppins', Arial, sans-serif;  
+    font-size: clamp(1.5rem, 2.7vw, 2.35rem);  
+    font-weight: 800 !important;  
+    color: #ffffff;  
     text-align: center;  
-    line-height: 1.2;  
+    line-height: 1.15;  
+    margin: 0;
+    letter-spacing: 0.6px;
+    text-shadow: 0 2px 10px rgba(56, 189, 248, 0.35);
 }  
-  
-.welcome-logo-container {  
-    display: flex;  
-    justify-content: center;  
-    align-items: center;  
-    margin: 5px 0 15px;  
-}  
-  
-.welcome-logo {  
-    width: 100%;  
-    max-width: 280px;  
-    height: auto;  
-    object-fit: contain;  
+
+.futuristic-subtitle {
+    font-family: 'Segoe UI', 'Poppins', Arial, sans-serif;
+    font-size: clamp(1.1rem, 1.8vw, 1.45rem);
+    font-weight: 700;
+    color: #22d3ee;
+    margin: 2px 0 4px;
+    text-shadow: 0 0 14px rgba(34, 211, 238, 0.45), 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+
+.futuristic-stations-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    width: 100%;
+    align-items: stretch;
+}
+
+.futuristic-glass-card {
+    background: linear-gradient(165deg, rgba(28, 42, 60, 0.84) 0%, rgba(18, 29, 43, 0.88) 100%);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1.5px solid rgba(148, 197, 233, 0.38);
+    border-radius: 20px;
+    padding: 20px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow:
+        0 18px 42px rgba(0, 0, 0, 0.55),
+        0 0 20px rgba(34, 211, 238, 0.10),
+        inset 0 1px 1px rgba(255, 255, 255, 0.22);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.futuristic-glass-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(56, 189, 248, 0.65);
+    box-shadow:
+        0 24px 50px rgba(0, 0, 0, 0.65),
+        0 0 28px rgba(56, 189, 248, 0.22),
+        inset 0 1px 2px rgba(255, 255, 255, 0.30);
+}
+
+.futuristic-pill {
+    display: inline-block;
+    background: rgba(51, 68, 89, 0.85);
+    color: #e2e8f0;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 5px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(203, 213, 225, 0.32);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    margin-bottom: 14px;
+    letter-spacing: 0.2px;
+}
+
+.futuristic-illustration-box {
+    width: 100%;
+    height: 195px;
+    min-height: 195px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 50%, #1e324a 0%, #142232 100%);
+    display: block;
+    position: relative;
+    margin-bottom: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.45);
+}
+
+.futuristic-card-img {
+    width: 100%;
+    height: 195px;
+    min-width: 100%;
+    min-height: 195px;
+    object-fit: cover;
+    object-position: center;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: block;
+    transition: transform 0.35s ease;
+}
+
+.futuristic-img-canjes {
+    background-image: var(--img-canjes-3d);
+}
+
+.futuristic-img-boleta {
+    background-image: var(--img-boleta-3d);
+}
+
+.futuristic-glass-card:hover .futuristic-card-img {
+    transform: scale(1.03);
+}
+
+.futuristic-card-title {
+    font-family: 'Segoe UI', 'Poppins', Arial, sans-serif;
+    font-size: 1.32rem;
+    font-weight: 800 !important;
+    color: #ffffff;
+    margin: 2px 0 8px;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+.futuristic-card-desc {
+    font-size: 0.86rem;
+    font-weight: 500;
+    color: #cbd5e1;
+    line-height: 1.45;
+    margin: 0 0 16px;
+    max-width: 390px;
+}
+
+.futuristic-actions {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.futuristic-btn {
+    width: 100%;
+    border: none;
+    border-radius: 999px;
+    padding: 11px 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #ffffff;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.22s ease;
+    text-decoration: none;
+}
+
+.futuristic-btn-blue {
+    background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+    border: 1px solid rgba(96, 165, 250, 0.65);
+    box-shadow:
+        0 6px 20px rgba(37, 99, 235, 0.55),
+        0 0 14px rgba(59, 130, 246, 0.4),
+        inset 0 1px 1px rgba(255, 255, 255, 0.35);
+}
+
+.futuristic-btn-blue:hover {
+    background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+    transform: translateY(-2px);
+    box-shadow:
+        0 10px 26px rgba(37, 99, 235, 0.72),
+        0 0 20px rgba(96, 165, 250, 0.6),
+        inset 0 1px 2px rgba(255, 255, 255, 0.45);
+}
+
+.futuristic-btn-green {
+    background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+    border: 1px solid rgba(110, 231, 183, 0.65);
+    box-shadow:
+        0 6px 20px rgba(16, 185, 129, 0.52),
+        0 0 14px rgba(16, 185, 129, 0.38),
+        inset 0 1px 1px rgba(255, 255, 255, 0.35);
+}
+
+.futuristic-btn-green:hover {
+    background: linear-gradient(180deg, #34d399 0%, #10b981 100%);
+    transform: translateY(-2px);
+    box-shadow:
+        0 10px 26px rgba(16, 185, 129, 0.7),
+        0 0 20px rgba(52, 211, 153, 0.55),
+        inset 0 1px 2px rgba(255, 255, 255, 0.45);
+}
+
+.futuristic-btn-outline {
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(56, 189, 248, 0.5);
+    color: #bae6fd;
+    font-size: 0.82rem;
+    padding: 8px 16px;
+}
+
+.futuristic-btn-outline:hover {
+    background: rgba(30, 58, 138, 0.65);
+    color: #ffffff;
+}
+
+.futuristic-arrow {
+    font-size: 1.05rem;
+    line-height: 1;
+    transition: transform 0.2s ease;
+}
+
+.futuristic-btn:hover .futuristic-arrow {
+    transform: translateX(4px);
+}
+
+.futuristic-note-card {
+    width: 100%;
+    background: linear-gradient(180deg, rgba(28, 42, 58, 0.80) 0%, rgba(19, 30, 44, 0.86) 100%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1.5px solid rgba(148, 197, 233, 0.34);
+    border-radius: 16px;
+    padding: 14px 28px;
+    box-shadow:
+        0 14px 34px rgba(0, 0, 0, 0.48),
+        inset 0 1px 1px rgba(255, 255, 255, 0.18);
+}
+
+.futuristic-note-title {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #93c5fd;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.futuristic-info-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #3b82f6;
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 800;
+    font-style: normal;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+}
+
+.futuristic-note-text {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #e2e8f0;
+    line-height: 1.45;
+    margin: 0 auto 6px;
+    max-width: 890px;
+}
+
+.futuristic-note-footer {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    margin: 0;
+    opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+    .welcome-screen {
+        padding: 16px;
+    }
+    .futuristic-stations-grid {
+        grid-template-columns: 1fr;
+    }
+    .futuristic-title-banner {
+        padding: 10px 20px;
+    }
 }  
   
 /* =========================================================
@@ -666,10 +977,6 @@ body {
 }
 
 /* =========================================================
-   ESTILOS PARA BOLETA MANUAL (PUNTO DE VENTA)
-   ========================================================= */
-
-/* =========================================================
    ESTILOS PARA BOLETA MANUAL (PUNTO DE VENTA - 2 PANTALLAS)
    ========================================================= */
 
@@ -898,7 +1205,3 @@ body {
     background-color: #dbeafe !important;
     color: #1d4ed8 !important;
 }
-
-
-
-
