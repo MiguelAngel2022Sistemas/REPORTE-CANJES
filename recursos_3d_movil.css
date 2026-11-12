@@ -1,0 +1,378 @@
+/* =========================================================
+   IMÁGENES 3D REALES (BIENVENIDA Y ESTACIONES 3D)
+   ========================================================= */
+:root {
+    --img-canjes-3d:
+        url('../../../../.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/pharmacy_report_illustration_1794455326612.jpg'),
+        url('file:///C:/Users/USUARIO/.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/pharmacy_report_illustration_1794455326612.jpg'),
+        url('../../../../.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/canjes_opt.jpg');
+    --img-boleta-3d:
+        url('../../../../.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/pharmacy_checkout_3d_1794455329319.jpg'),
+        url('file:///C:/Users/USUARIO/.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/pharmacy_checkout_3d_1794455329319.jpg'),
+        url('../../../../.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/boleta_opt.jpg');
+    --bg-futuristic-pharmacy:
+        url('../../../../.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/futuristic_pharmacy_bg_1794455322482.jpg'),
+        url('file:///C:/Users/USUARIO/.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/futuristic_pharmacy_bg_1794455322482.jpg'),
+        url('../../../../.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/bg_opt.jpg');
+}
+
+.welcome-screen {
+    background-image:
+        linear-gradient(180deg, rgba(6, 15, 30, 0.35) 0%, rgba(10, 22, 42, 0.65) 100%),
+        var(--bg-futuristic-pharmacy) !important;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+}
+
+.futuristic-illustration-box {
+    width: 100% !important;
+    height: 195px !important;
+    min-height: 195px !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    position: relative !important;
+    display: block !important;
+    background: radial-gradient(circle at 50% 50%, #1e324a 0%, #142232 100%) !important;
+}
+
+.futuristic-card-img {
+    width: 100% !important;
+    height: 195px !important;
+    min-width: 100% !important;
+    min-height: 195px !important;
+    object-fit: cover !important;
+    object-position: center center !important;
+    display: block !important;
+}
+
+.futuristic-img-canjes {
+    background-image: var(--img-canjes-3d) !important;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+}
+
+.futuristic-img-boleta {
+    background-image: var(--img-boleta-3d) !important;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+}
+
+/* =========================================================
+   BOLETA MANUAL - FORMATO PC (ESCRITORIO >= 992px)
+   ========================================================= */
+@media (min-width: 992px) {
+    #modalBoletaManual .modal-dialog.modal-xl {
+        max-width: 1240px !important;
+        width: 95vw !important;
+        margin: 1.25rem auto !important;
+    }
+
+    #modalBoletaManual .modal-header {
+        background: linear-gradient(135deg, #0055d4, #0d6efd) !important;
+        padding: 0.75rem 1.25rem !important;
+    }
+
+    #modalBoletaManual .modal-body {
+        background-color: #f1f5f9 !important;
+        padding: 1rem 1.25rem !important;
+    }
+
+    #modalBoletaManual .boleta-table-wrapper {
+        max-height: 290px !important;
+        min-height: 220px !important;
+    }
+
+    .boleta-totales-grid .totales-box {
+        border-radius: 10px !important;
+        padding: 0.65rem 0.75rem !important;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .boleta-totales-grid .totales-title {
+        font-size: 0.74rem !important;
+        font-weight: 800 !important;
+        text-transform: uppercase;
+        margin-bottom: 0.25rem !important;
+    }
+
+    #boletaSumaCostos {
+        font-size: 1.45rem !important;
+        font-weight: 800 !important;
+        color: #0d6efd !important;
+        line-height: 1.15;
+    }
+
+    #boletaMontoCliente {
+        font-size: 1.1rem !important;
+        font-weight: 800 !important;
+        text-align: center;
+    }
+
+    #boletaDiferenciaCard .input-group {
+        justify-content: center;
+        align-items: center;
+    }
+
+    #boletaDiferenciaMoneda {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 3px 0 0 !important;
+        font-size: 1.25rem !important;
+        font-weight: 800 !important;
+    }
+
+    #boletaDiferenciaSoles {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        font-size: 1.35rem !important;
+        font-weight: 800 !important;
+        width: 85px !important;
+        flex: 0 1 auto !important;
+        box-shadow: none !important;
+    }
+
+    #boletaDiferenciaEtiqueta {
+        font-size: 0.7rem !important;
+        margin-top: 2px !important;
+    }
+
+    .boleta-modal-footer {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+    }
+
+    .boleta-footer-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+    }
+}
+
+/* =========================================================
+   BOLETA MANUAL - FORMATO CELULAR VERTICAL (< 992px)
+   Se activa automáticamente cuando se abre desde celular
+   ========================================================= */
+@media (max-width: 991.98px) {
+    #modalBoletaManual .modal-dialog,
+    #modalBoletaManual .modal-dialog.modal-xl {
+        max-width: 445px !important;
+        width: 96vw !important;
+        margin: 0.45rem auto !important;
+    }
+
+    #modalBoletaManual .modal-content {
+        border-radius: 18px !important;
+        border: 2px solid #cbd5e1 !important;
+        overflow: hidden;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35) !important;
+    }
+
+    #modalBoletaManual .modal-header {
+        background: linear-gradient(135deg, #0055d4, #0d6efd) !important;
+        padding: 0.6rem 0.85rem !important;
+        border-bottom: none !important;
+    }
+
+    #modalBoletaManual .modal-body {
+        background-color: #eef2f6 !important;
+        padding: 0.65rem !important;
+    }
+
+    #modalBoletaManual .boleta-panel-pantalla {
+        border-radius: 12px !important;
+        background: #ffffff !important;
+        border: 1px solid #dce3ec !important;
+        box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06) !important;
+        overflow: hidden;
+    }
+
+    #modalBoletaManual .boleta-panel-left {
+        border-top: 4px solid #0d6efd !important;
+    }
+
+    #modalBoletaManual .boleta-panel-right {
+        border-top: 4px solid #10b981 !important;
+    }
+
+    #modalBoletaManual .form-label {
+        font-size: 0.73rem !important;
+        font-weight: 800 !important;
+        color: #1e293b;
+        letter-spacing: 0.1px;
+        margin-bottom: 0.18rem !important;
+    }
+
+    #modalBoletaManual .form-control,
+    #modalBoletaManual .form-select {
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 7px !important;
+        font-size: 0.82rem !important;
+        padding: 0.36rem 0.5rem !important;
+        min-height: 34px !important;
+        font-weight: 600 !important;
+    }
+
+    .boleta-mobile-3col .form-label {
+        font-size: 0.66rem !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+    }
+
+    .boleta-mobile-3col .form-select,
+    .boleta-mobile-3col .form-control,
+    .boleta-mobile-3col .input-group-text,
+    .boleta-mobile-3col .btn {
+        font-size: 0.78rem !important;
+        padding: 0.3rem 0.32rem !important;
+        min-height: 33px !important;
+    }
+
+    #boletaPresentacion {
+        padding-right: 1.35rem !important;
+        background-position: right 0.3rem center !important;
+        color: #0f172a !important;
+    }
+
+    #btnBoletaCantMenosForm,
+    #btnBoletaCantMasForm {
+        padding: 0.22rem 0.42rem !important;
+        background-color: #f8fafc !important;
+        border: 1.5px solid #cbd5e1 !important;
+        color: #334155 !important;
+    }
+
+    #boletaCantidad {
+        padding: 0.22rem 0.1rem !important;
+        font-size: 0.84rem !important;
+    }
+
+    #boletaCosto {
+        font-size: 0.85rem !important;
+        color: #0f172a !important;
+        text-align: right;
+    }
+
+    .boleta-totales-grid .totales-box {
+        border-radius: 9px !important;
+        padding: 0.42rem 0.28rem !important;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .boleta-totales-grid .totales-title {
+        font-size: 0.6rem !important;
+        font-weight: 800 !important;
+        text-transform: uppercase;
+        line-height: 1.15;
+        margin-bottom: 0.2rem !important;
+        white-space: nowrap;
+        letter-spacing: -0.15px;
+    }
+
+    #boletaSumaCostos {
+        font-size: 1.05rem !important;
+        font-weight: 800 !important;
+        color: #0d6efd !important;
+        line-height: 1.1;
+    }
+
+    #boletaMontoCliente {
+        font-size: 0.85rem !important;
+        font-weight: 800 !important;
+        color: #0f172a !important;
+        padding: 0.18rem 0.25rem !important;
+        min-height: 28px !important;
+        text-align: center;
+    }
+
+    #boletaDiferenciaCard .input-group {
+        justify-content: center;
+        align-items: center;
+    }
+
+    #boletaDiferenciaMoneda {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 2px 0 0 !important;
+        font-size: 1rem !important;
+        font-weight: 800 !important;
+    }
+
+    #boletaDiferenciaSoles {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        min-height: auto !important;
+        font-size: 1.04rem !important;
+        font-weight: 800 !important;
+        width: 62px !important;
+        flex: 0 1 auto !important;
+        box-shadow: none !important;
+    }
+
+    #boletaDiferenciaEtiqueta {
+        font-size: 0.57rem !important;
+        line-height: 1.1;
+        margin-top: 2px !important;
+    }
+
+    #modalBoletaManual .boleta-table-wrapper {
+        max-height: 145px !important;
+        min-height: 96px !important;
+    }
+
+    #boletaTable th {
+        font-size: 0.65rem !important;
+        padding: 0.38rem 0.28rem !important;
+        white-space: nowrap;
+    }
+
+    #boletaTable td {
+        font-size: 0.72rem !important;
+        padding: 0.32rem 0.28rem !important;
+    }
+
+    .boleta-modal-footer {
+        padding: 0.5rem !important;
+    }
+
+    .boleta-footer-actions {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.45rem;
+        width: 100%;
+    }
+
+    .boleta-btn-ticket {
+        grid-column: 1 / -1;
+        order: -1;
+        width: 100% !important;
+        padding: 0.52rem 0.75rem !important;
+        font-size: 0.9rem !important;
+        margin: 0 !important;
+    }
+
+    .boleta-btn-cerrar,
+    .boleta-btn-a4 {
+        width: 100% !important;
+        padding: 0.38rem 0.5rem !important;
+        font-size: 0.83rem !important;
+        margin: 0 !important;
+    }
+}
