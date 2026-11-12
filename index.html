@@ -855,7 +855,7 @@
     <script src="Data_Lectura_Interpretativa_Lote.js"></script>
 
     <!-- Lógica de la aplicación -->
-    <script src="app.js"></script>
+    <script src="app.js?v=20261112d"></script>
 
     <script>
         let loteInfoModal;
@@ -865,6 +865,23 @@
             }
         });
         document.addEventListener('DOMContentLoaded', () => {
+            // Respaldo de botones principales en caso de recarga o caché
+            if (!window.__CANJES_INIT_DONE__) {
+                if (typeof inicializarAplicacionCanjes === 'function') {
+                    inicializarAplicacionCanjes();
+                } else {
+                    document.getElementById('btnNuevoArchivo')?.addEventListener('click', () => {
+                        const fm = document.getElementById('fileModal');
+                        if (fm && window.bootstrap) bootstrap.Modal.getOrCreateInstance(fm, { backdrop: 'static', keyboard: false }).show();
+                    });
+                    ['btnBoletaManualWelcome', 'btnBoletaManualHeader', 'btnBoletaManualBarra'].forEach(id => {
+                        document.getElementById(id)?.addEventListener('click', () => {
+                            const bm = document.getElementById('modalBoletaManual');
+                            if (bm && window.bootstrap) bootstrap.Modal.getOrCreateInstance(bm).show();
+                        });
+                    });
+                }
+            }
             const el = document.getElementById('loteInfoModal');
             if (el) { loteInfoModal = new bootstrap.Modal(el); }
             document.addEventListener('keydown', function (e) {
