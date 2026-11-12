@@ -7,68 +7,119 @@
     <title>Gestor de Canjes Tecnicos Farmacias</title>
 
     <!-- Dependencias externas -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="icon" href="MIFARMA_ICONS.png" type="image/png">>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap">
+    <link rel="icon" href="MIFARMA_ICONS.png" type="image/png">
 
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=20261112b">
+    <link rel="stylesheet" href="recursos_3d_movil.css?v=20261112b">
 </head>
 
 <body>
 
-    <!-- PANTALLA DE BIENVENIDA -->
+    <!-- PANTALLA DE BIENVENIDA (DISEÑO FARMACIA FUTURISTA 3D) -->
     <div id="welcomeScreen" class="welcome-screen">
-        <h1 class="welcome-title display-4">
-            ¡BIENVENIDOS A GESTIÓN DE CANJES!<br>¡Vamos a Realizar tus políticas!
-        </h1>
-        <div class="welcome-logo-container">
-            <img src="MIFARMA_LOGO.png" alt="Logo Mifarma" class="welcome-logo">
-        </div>
-        <div class="d-flex flex-column gap-3">
-            <button id="btnUltimoArchivo" class="btn btn-lg btn-inkafarma-outline d-none" type="button">
-                Usar último archivo trabajado
-            </button>
-            <button id="btnNuevoArchivo" class="btn btn-lg btn-inkafarma" type="button">
-                Insertar tu Excel de política de devolución
-            </button>
-            <button id="btnBoletaManualWelcome" class="btn btn-lg btn-success shadow-sm" type="button" style="background: linear-gradient(135deg, #10b981, #059669); border: none;">
-                <i class="fas fa-cash-register me-2"></i> Realizar Boleta Manual (Punto de Venta)
-            </button>
-        </div>
-        <div style="
-    margin-top: 30px;
-    padding: 20px;
-    max-width: 850px;
-    margin-left:auto;
-    margin-right:auto;
-    background:#ffffff;
-    border-radius:10px;
-    box-shadow:0 4px 12px rgba(0,0,0,0.1);
-    text-align:center;
-">
+        <div class="futuristic-welcome-wrapper">
 
-            <h1 style="font-size:18px; color:#007bff; font-weight:bold;">
-                ℹ️ NOTA IMPORTANTE
-            </h1>
+            <!-- ENCABEZADO SUPERIOR -->
+            <header class="futuristic-header">
+                <div class="futuristic-title-banner">
+                    <h1 class="welcome-title m-0">
+                        ¡BIENVENIDOS A GESTIÓN DE CANJES!
+                    </h1>
+                </div>
+                <p class="futuristic-subtitle">
+                    ¡Vamos a Realizar tus políticas!
+                </p>
+            </header>
 
-            <p style="font-size:13px; color:#333; font-weight:bold; line-height:1.6;">
-                Esta herramienta ha sido creada como un <strong>buscador rápido de políticas de devolución</strong>,
-                con el objetivo de reducir el tiempo que normalmente se invierte al abrir y recorrer archivos Excel
-                extensos con grandes volúmenes de datos.
+            <!-- DOS ESTACIONES 3D EN PARALELO (FORMATO COMPUTADORA 16:9) -->
+            <div class="futuristic-stations-grid">
 
-                Permite consultar la información de manera ágil y ordenada, facilitando la búsqueda de productos,
-                estados de política y fechas relevantes sin necesidad de realizar procesos manuales repetitivos.
+                <!-- ESTACIÓN 1: GESTOR DE CANJES TÉCNICOS -->
+                <div class="futuristic-glass-card">
+                    <div class="futuristic-card-top">
+                        <span class="futuristic-pill">Realiza tus canjes</span>
+                    </div>
 
-                Su finalidad es apoyar el trabajo diario, mejorar la eficiencia operativa y optimizar la experiencia
-                del usuario al acceder a la información necesaria de forma práctica y clara.
+                    <div class="futuristic-illustration-box">
+                        <img src="../../../../.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/pharmacy_report_illustration_1794455326612.jpg"
+                            onerror="if(!this.dataset.f1){this.dataset.f1='1';this.src='file:///C:/Users/USUARIO/.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/pharmacy_report_illustration_1794455326612.jpg';}else if(!this.dataset.f2){this.dataset.f2='1';this.src='../../../../.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/canjes_opt.jpg';}"
+                            alt="Gestor de Canjes Técnicos 3D"
+                            class="futuristic-card-img futuristic-img-canjes">
+                    </div>
 
-                <br><br>
-                <span style="font-size:12px; color:#666;">
+                    <h2 class="futuristic-card-title">Gestor de Canjes Técnicos</h2>
+                    <p class="futuristic-card-desc">
+                        Búsqueda de políticas de devolución, consulta de códigos POSU/EAN y emisión de reportes
+                        técnicos.
+                    </p>
+
+                    <div class="futuristic-actions">
+                        <button id="btnUltimoArchivo" class="btn futuristic-btn futuristic-btn-outline d-none"
+                            type="button">
+                            <i class="fas fa-history me-1"></i> Usar último archivo trabajado
+                        </button>
+                        <button id="btnNuevoArchivo" class="btn futuristic-btn futuristic-btn-blue" type="button">
+                            Insertar tu Excel de política de devolución <span class="futuristic-arrow">→</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ESTACIÓN 2: BOLETA MANUAL (PUNTO DE VENTA) -->
+                <div class="futuristic-glass-card">
+                    <div class="futuristic-card-top">
+                        <span class="futuristic-pill">Punto de Venta / Contingencia</span>
+                    </div>
+
+                    <div class="futuristic-illustration-box">
+                        <img src="../../../../.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/pharmacy_checkout_3d_1794455329319.jpg"
+                            onerror="if(!this.dataset.f1){this.dataset.f1='1';this.src='file:///C:/Users/USUARIO/.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/pharmacy_checkout_3d_1794455329319.jpg';}else if(!this.dataset.f2){this.dataset.f2='1';this.src='../../../../.gemini/antigravity/brain/e0a27812-87e0-4e00-93c2-172daf203cf6/boleta_opt.jpg';}"
+                            alt="Boleta Manual POS 3D"
+                            class="futuristic-card-img futuristic-img-boleta">
+                    </div>
+
+                    <h2 class="futuristic-card-title">Boleta Manual (Punto de Venta)</h2>
+                    <p class="futuristic-card-desc">
+                        Emisión de comprobantes manuales de contingencia, cálculo automático de vuelto e impresión
+                        térmica.
+                    </p>
+
+                    <div class="futuristic-actions">
+                        <button id="btnBoletaManualWelcome" class="btn futuristic-btn futuristic-btn-green"
+                            type="button">
+                            Realizar Boleta Manual (Punto de Venta) <span class="futuristic-arrow">→</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- TARJETA INFERIOR: NOTA IMPORTANTE -->
+            <div class="futuristic-note-card">
+                <h3 class="futuristic-note-title">
+                    <span class="futuristic-info-badge">i</span> NOTA IMPORTANTE
+                </h3>
+                <p class="futuristic-note-text">
+                    Esta herramienta ha sido creada como un <strong>buscador rápido de políticas de
+                        devolución</strong>,
+                    con el objetivo de reducir el tiempo que normalmente se invierte al abrir y recorrer archivos
+                    Excel
+                    extensos con grandes volúmenes de datos. Permite consultar la información de manera ágil y
+                    ordenada,
+                    facilitando la búsqueda de productos, estados de política y fechas relevantes sin necesidad de
+                    realizar
+                    procesos manuales repetitivos. Su finalidad es apoyar el trabajo diario, mejorar la eficiencia
+                    operativa
+                    y optimizar la experiencia del usuario al acceder a la información necesaria de forma práctica y
+                    clara.
+                </p>
+                <div class="futuristic-note-footer">
                     Desarrollo realizado como herramienta de apoyo para la consulta y organización de información.
-                </span>
-            </p>
+                </div>
+            </div>
 
         </div>
     </div>
@@ -83,7 +134,8 @@
                         <h2 class="app-title m-0">🏥🩺🏥🧑‍⚕️GESTOR DE CANJES TECNICOS FARMACIA 🏥🩺🏥🧑‍⚕️</h2>
                     </div>
                     <div class="col-auto d-flex gap-2">
-                        <button id="btnBoletaManualHeader" class="btn btn-sm btn-success shadow-sm" type="button" style="background: linear-gradient(135deg, #10b981, #059669); border: none;">
+                        <button id="btnBoletaManualHeader" class="btn btn-sm btn-success shadow-sm" type="button"
+                            style="background: linear-gradient(135deg, #10b981, #059669); border: none;">
                             <i class="fas fa-cash-register me-1"></i> Realizar Boleta Manual
                         </button>
                         <button id="btnVolverInicio" class="btn btn-sm btn-outline-secondary" type="button">
@@ -112,7 +164,8 @@
 
             <!-- FORMULARIO DE CANJE -->
             <div class="form-container">
-                <h5 class="mb-3"><i class="fas fa-clipboard-list"></i> Formulario de Canje [F1] Seleccionar automática
+                <h5 class="mb-3"><i class="fas fa-clipboard-list"></i> Formulario de Canje [F1] Seleccionar
+                    automática
                     el buscador</h5>
 
                 <div class="row mb-3">
@@ -146,7 +199,6 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">📋 ESTADO:</label>
-
                         <input type="text" id="labelEstado" class="form-control readonly-field" readonly>
                     </div>
                 </div>
@@ -160,13 +212,13 @@
 
                 <div class="row mb-3">
                     <div class="col-12">
-                        <button id="btnToggleLote" class="btn btn-danger w-100" type="button">🔴 Sin información de lote
+                        <button id="btnToggleLote" class="btn btn-danger w-100" type="button">🔴 Sin información de
+                            lote
                             (F2) Verifica productos sin fecha vencimiento por lote</button>
                     </div>
                 </div>
 
                 <!-- Información de Lote y Vida Útil (JSON) -->
-
                 <div id="panelLote" class="row mb-3"
                     style="display:none !important; visibility:hidden !important; height:0 !important; overflow:hidden !important;">
                     <div class="col-md-12">
@@ -184,12 +236,14 @@
                                 </div>
                                 <div class="col-md-3 mb-2">
                                     <p class="mb-1 text-muted small fw-bold">PRODUCTO:</p>
-                                    <p id="labelProveedorLote" class="mb-2 mb-md-0" style="font-size: 0.9rem;">Esperando
+                                    <p id="labelProveedorLote" class="mb-2 mb-md-0" style="font-size: 0.9rem;">
+                                        Esperando
                                         búsqueda...</p>
                                 </div>
                                 <div class="col-md-3 mb-2">
                                     <p class="mb-1 text-muted small fw-bold">TIEMPO DE VIDA ÚTIL:</p>
-                                    <p id="labelTiempoVida" class="mb-2 mb-md-0" style="font-size: 0.9rem;">Esperando
+                                    <p id="labelTiempoVida" class="mb-2 mb-md-0" style="font-size: 0.9rem;">
+                                        Esperando
                                         búsqueda...</p>
                                 </div>
                                 <div class="col-md-3 mb-2">
@@ -202,149 +256,148 @@
                     </div>
                 </div>
 
-            </div>
+                <!-- Botón Copiar Ficha del Producto -->
+                <div class="row mb-3">
+                    <div class="col-12 text-center">
+                        <button id="btnCopiarFicha" class="btn btn-primary btn-lg w-100" type="button"
+                            style="background: linear-gradient(45deg, #1e3a5f, #2c5282); border: none; font-weight: bold;">
+                            <i class="fas fa-copy me-2"></i> COPIAR FICHA DEL PRODUCTO (MEDICAMENTO / DERMO / BEBÉS)
+                        </button>
+                    </div>
+                </div>
 
-            <!-- Botón Copiar Ficha del Producto -->
-            <div class="row mb-3">
-                <div class="col-12 text-center">
-                    <button id="btnCopiarFicha" class="btn btn-primary btn-lg w-100" type="button"
-                        style="background: linear-gradient(45deg, #1e3a5f, #2c5282); border: none; font-weight: bold;">
-                        <i class="fas fa-copy me-2"></i> COPIAR FICHA DEL PRODUCTO (MEDICAMENTO / DERMO / BEBÉS)
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label" for="inputFecha">📅 F-V (ejemplo: 0526=05/2026):</label>
+                        <input type="text" id="inputFecha" class="form-control" placeholder="MMAA">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" for="inputResponsable">👤 Responsable:</label>
+                        <input type="text" id="inputResponsable" class="form-control" placeholder="Nombre del responsable">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">🔢 Entero (E):</label>
+                        <input type="number" id="inputEntero" class="form-control" placeholder="0" value="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">🔢 Fracción (F):</label>
+                        <input type="number" id="inputFraccion" class="form-control" placeholder="0" value="0">
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <button id="btnGuardar" class="btn btn-inkafarma" type="button">
+                        <i class="fas fa-save"></i> GUARDAR
                     </button>
                 </div>
             </div>
 
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <label class="form-label" for="inputFecha">📅 F-V (ejemplo: 0526=05/2026):</label>
-                    <input type="text" id="inputFecha" class="form-control" placeholder="MMAA">
+            <!-- FILTROS -->
+            <div class="form-container">
+                <h5 class="mb-3"><i class="fas fa-filter"></i> Filtros rápidos</h5>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 mb-2">
+                        <div class="input-group">
+                            <span class="input-group-text">COD_POSU</span>
+                            <input type="text" id="filtroCodigoPosu" class="form-control" placeholder="Buscar por código">
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="input-group">
+                            <span class="input-group-text">Estado</span>
+                            <select id="filtroEstado" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="TIENE POLÍTICA">POLÍTICA REGULAR</option>
+                                <option value="NO TIENE POLÍTICA">NO TIENE POLÍTICA</option>
+                                <option value="POLÍTICA EXCEPCIONAL">POLÍTICA EXCEPCIONAL</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="input-group">
+                            <span class="input-group-text">Laboratorio</span>
+                            <input type="text" id="filtroLaboratorio" class="form-control"
+                                placeholder="Buscar por laboratorio">
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label" for="inputResponsable">👤 Responsable:</label>
-                    <input type="text" id="inputResponsable" class="form-control" placeholder="Nombre del responsable">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">🔢 Entero (E):</label>
-                    <input type="number" id="inputEntero" class="form-control" placeholder="0" value="0">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">🔢 Fracción (F):</label>
-                    <input type="number" id="inputFraccion" class="form-control" placeholder="0" value="0">
+
+                <div class="row mb-3">
+                    <div class="col-md-4 mb-2">
+                        <div class="input-group">
+                            <span class="input-group-text">Fecha (MM/AAAA)</span>
+                            <input type="text" id="filtroFecha" class="form-control" placeholder="MMAA">
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <div class="input-group">
+                            <span class="input-group-text">Urgente (MM/AAAA)</span>
+                            <input type="text" id="filtroUrgente" class="form-control" placeholder="MMAA">
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end align-self-end">
+                        <button id="btnAplicarFiltro" class="btn btn-inkafarma me-2" type="button">
+                            <i class="fas fa-search"></i> Aplicar filtros
+                        </button>
+                        <button id="btnLimpiarFiltros" class="btn btn-outline-secondary" type="button">
+                            <i class="fas fa-redo"></i> Limpiar filtros
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div class="text-end">
-                <button id="btnGuardar" class="btn btn-inkafarma" type="button">
-                    <i class="fas fa-save"></i> GUARDAR
+            <!-- TABLA -->
+            <div class="table-container">
+                <h5 class="mb-3"><i class="fas fa-table"></i> Productos agregados</h5>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <button class="btn btn-danger" id="btnEliminarTodo">
+                            <i class="fas fa-trash-alt"></i> Eliminar todo
+                        </button>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button id="btnExportarPdf" class="btn btn-inkafarma" type="button">
+                            <i class="fas fa-file-pdf"></i> Exportar PDF
+                        </button>
+                        <button id="btnExportarExcel" class="btn btn-inkafarma" type="button">
+                            <i class="fas fa-file-excel"></i> Exportar Excel
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="productosTable" class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>RESPONSABLE</th>
+                                <th>COD_POSU</th>
+                                <th>DESCRIPCION</th>
+                                <th>LABORATORIO</th>
+                                <th>ESTADO</th>
+                                <th>F-V</th>
+                                <th>E</th>
+                                <th>F</th>
+                                <th>URGENTE</th>
+                                <th>ACCIONES</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-center gap-2 my-4">
+                <button id="btnExportarPdf2" class="btn btn-inkafarma" type="button">
+                    <i class="fas fa-file-pdf"></i> Exportar PDF
+                </button>
+                <button id="btnExportarExcel2" class="btn btn-inkafarma" type="button">
+                    <i class="fas fa-file-excel"></i> Exportar Excel
                 </button>
             </div>
+
         </div>
-
-        <!-- FILTROS -->
-        <div class="form-container">
-            <h5 class="mb-3"><i class="fas fa-filter"></i> Filtros rápidos</h5>
-
-            <div class="row mb-3">
-                <div class="col-md-4 mb-2">
-                    <div class="input-group">
-                        <span class="input-group-text">COD_POSU</span>
-                        <input type="text" id="filtroCodigoPosu" class="form-control" placeholder="Buscar por código">
-                    </div>
-                </div>
-                <div class="col-md-4 mb-2">
-                    <div class="input-group">
-                        <span class="input-group-text">Estado</span>
-                        <select id="filtroEstado" class="form-select">
-                            <option value="">Todos</option>
-                            <option value="TIENE POLÍTICA">POLÍTICA REGULAR</option>
-                            <option value="NO TIENE POLÍTICA">NO TIENE POLÍTICA</option>
-                            <option value="POLÍTICA EXCEPCIONAL">POLÍTICA EXCEPCIONAL</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-2">
-                    <div class="input-group">
-                        <span class="input-group-text">Laboratorio</span>
-                        <input type="text" id="filtroLaboratorio" class="form-control"
-                            placeholder="Buscar por laboratorio">
-                    </div>
-                </div>
-            </div>
-
-            <div class="row mb-3">
-                <div class="col-md-4 mb-2">
-                    <div class="input-group">
-                        <span class="input-group-text">Fecha (MM/AAAA)</span>
-                        <input type="text" id="filtroFecha" class="form-control" placeholder="MMAA">
-                    </div>
-                </div>
-                <div class="col-md-4 mb-2">
-                    <div class="input-group">
-                        <span class="input-group-text">Urgente (MM/AAAA)</span>
-                        <input type="text" id="filtroUrgente" class="form-control" placeholder="MMAA">
-                    </div>
-                </div>
-                <div class="col-md-4 text-end align-self-end">
-                    <button id="btnAplicarFiltro" class="btn btn-inkafarma me-2" type="button">
-                        <i class="fas fa-search"></i> Aplicar filtros
-                    </button>
-                    <button id="btnLimpiarFiltros" class="btn btn-outline-secondary" type="button">
-                        <i class="fas fa-redo"></i> Limpiar filtros
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- TABLA -->
-        <div class="table-container">
-            <h5 class="mb-3"><i class="fas fa-table"></i> Productos agregados</h5>
-
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                    <button class="btn btn-danger" id="btnEliminarTodo">
-                        <i class="fas fa-trash-alt"></i> Eliminar todo
-                    </button>
-                </div>
-                <div class="d-flex gap-2">
-                    <button id="btnExportarPdf" class="btn btn-inkafarma" type="button">
-                        <i class="fas fa-file-pdf"></i> Exportar PDF
-                    </button>
-                    <button id="btnExportarExcel" class="btn btn-inkafarma" type="button">
-                        <i class="fas fa-file-excel"></i> Exportar Excel
-                    </button>
-                </div>
-            </div>
-
-            <div class="table-responsive">
-                <table id="productosTable" class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>RESPONSABLE</th>
-                            <th>COD_POSU</th>
-                            <th>DESCRIPCION</th>
-                            <th>LABORATORIO</th>
-                            <th>ESTADO</th>
-                            <th>F-V</th>
-                            <th>E</th>
-                            <th>F</th>
-                            <th>URGENTE</th>
-                            <th>ACCIONES</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="d-flex justify-content-center gap-2 my-4">
-            <button id="btnExportarPdf2" class="btn btn-inkafarma" type="button">
-                <i class="fas fa-file-pdf"></i> Exportar PDF
-            </button>
-            <button id="btnExportarExcel2" class="btn btn-inkafarma" type="button">
-                <i class="fas fa-file-excel"></i> Exportar Excel
-            </button>
-        </div>
-    </div>
     </div>
 
     <!-- MODAL: Cargar archivo -->
@@ -448,141 +501,166 @@
         </div>
     </div>
 
-    <!-- MODAL: REALIZAR BOLETA MANUAL (PUNTO DE VENTA - DIVISIÓN DE 2 PANTALLAS) -->
-    <div class="modal fade" id="modalBoletaManual" tabindex="-1" aria-labelledby="modalBoletaManualLabel" aria-hidden="true">
+    <!-- MODAL: REALIZAR BOLETA MANUAL (PC: 2 PANTALLAS EN PARALELO | CELULAR: FORMATO VERTICAL ADAPTADO) -->
+    <div class="modal fade" id="modalBoletaManual" tabindex="-1" aria-labelledby="modalBoletaManualLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content shadow-lg border-0">
                 <!-- HEADER DEL MODAL -->
-                <div class="modal-header text-white" style="background: linear-gradient(135deg, #0d6efd, #0b5ed7);">
+                <div class="modal-header text-white d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center gap-2">
-                        <div class="rounded-circle bg-white text-primary d-flex align-items-center justify-content-center shadow-sm" style="width: 38px; height: 38px; font-size: 1.15rem;">
+                        <div class="rounded-circle bg-white text-primary d-flex align-items-center justify-content-center shadow-sm flex-shrink-0"
+                            style="width: 36px; height: 36px; font-size: 1.05rem;">
                             <i class="fas fa-cash-register"></i>
                         </div>
                         <div>
-                            <h5 class="modal-title fw-bold mb-0" id="modalBoletaManualLabel">Realizar Boleta Manual</h5>
-                            <small class="text-white-50">Punto de Venta / Canje: Sistema organizado en 2 Pantallas</small>
+                            <h5 class="modal-title fw-bold mb-0" id="modalBoletaManualLabel" style="font-size: 1.05rem;">
+                                Realizar Boleta Manual <span class="d-none d-lg-inline">(Punto de Venta)</span>
+                            </h5>
+                            <small class="text-white-50 d-none d-lg-block" style="font-size: 0.72rem;">
+                                Buscador rápido POSU/EAN • Autocompletado • Impresión Térmica 80mm y A4
+                            </small>
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <span id="badgeBoletaArchivo" class="badge bg-light text-dark px-2 py-1 shadow-sm" style="font-size: 0.75rem;">
-                            <i class="fas fa-file-excel text-success me-1"></i> <span id="textBoletaArchivo">Sin Excel cargado</span>
+                        <span id="badgeBoletaArchivo" class="badge bg-light text-dark px-2 py-1 shadow-sm d-none"
+                            style="font-size: 0.72rem;">
+                            <i class="fas fa-file-excel text-success me-1"></i>
+                            <span id="textBoletaArchivo">Sin Excel</span>
                         </span>
-                        <button type="button" id="btnBoletaCargarExcel" class="btn btn-sm btn-outline-light" title="Cargar archivo Excel de políticas">
-                            <i class="fas fa-upload me-1"></i> Cargar Excel
+                        <button type="button" id="btnBoletaCargarExcel"
+                            class="btn btn-sm btn-outline-light py-1 px-2"
+                            title="Cargar archivo Excel de políticas">
+                            <i class="fas fa-file-excel"></i>
+                            <span class="d-none d-lg-inline ms-1">Cargar Excel</span>
                         </button>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close btn-close-white ms-1" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                     </div>
                 </div>
 
-                <!-- BODY DEL MODAL: DIVISIÓN EN 2 PANTALLAS -->
-                <div class="modal-body p-3 p-lg-4" style="background-color: #f1f5f9;">
-                    <div class="row g-3 g-lg-4 align-items-stretch">
-                        
-                        <!-- ================= PANTALLA 1: BUSCADOR Y FORMATO DE PRODUCTO (IZQUIERDA) ================= -->
-                        <div class="col-lg-5 d-flex flex-column">
+                <!-- BODY DEL MODAL (PC: 2 COLUMNAS LADO A LADO | CELULAR: VERTICAL ARRIBA Y ABAJO) -->
+                <div class="modal-body">
+                    <div class="row g-2 g-lg-3 align-items-stretch">
+
+                        <!-- ================= PANTALLA 1: BÚSQUEDA Y FORMATO ================= -->
+                        <div class="col-12 col-lg-5 d-flex flex-column">
                             <div class="card border-0 shadow-sm h-100 boleta-panel-pantalla boleta-panel-left">
-                                <div class="card-header bg-white py-2 px-3 border-bottom d-flex align-items-center justify-content-between">
+                                <div
+                                    class="card-header bg-white py-2 px-2 px-lg-3 border-bottom d-flex align-items-center justify-content-between">
                                     <div class="d-flex align-items-center gap-2">
-                                        <span class="badge bg-primary px-2 py-1"><i class="fas fa-desktop me-1"></i> PANTALLA 1</span>
-                                        <span class="fw-bold text-dark small text-uppercase">Búsqueda y Formato</span>
+                                        <span class="badge bg-primary px-2 py-1" style="font-size: 0.7rem;">
+                                            <i class="fas fa-desktop me-1"></i> PANTALLA 1
+                                        </span>
+                                        <span class="fw-bold text-dark text-uppercase" style="font-size: 0.8rem;">
+                                            BÚSQUEDA Y FORMATO
+                                        </span>
                                     </div>
-                                    <span class="text-muted small"><i class="fas fa-keyboard me-1"></i> Atajo: Enter</span>
                                 </div>
-                                <div class="card-body p-3 d-flex flex-column gap-3">
-                                    
-                                    <!-- Buscador de Producto -->
-                                    <div class="boleta-subcard p-3 rounded border">
-                                        <label class="form-label fw-bold text-secondary mb-1" for="boletaInputCodigo">
+                                <div class="card-body p-2 p-lg-3 d-flex flex-column gap-2 justify-content-between">
+
+                                    <!-- 1. Buscador de Producto por Código POSU o EAN -->
+                                    <div>
+                                        <label class="form-label" for="boletaInputCodigo">
                                             <i class="fas fa-barcode text-primary me-1"></i> BUSCAR PRODUCTO POR CÓDIGO POSU O EAN:
                                         </label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
-                                            <input type="text" id="boletaInputCodigo" class="form-control" placeholder="Buscar por..." inputmode="numeric" pattern="[0-9]*" maxlength="20" autocomplete="off">
-                                            <button id="btnBoletaBuscar" class="btn btn-primary fw-bold px-3" type="button">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-white">
+                                                <i class="fas fa-search text-secondary"></i>
+                                            </span>
+                                            <input type="text" id="boletaInputCodigo" class="form-control"
+                                                placeholder="Buscar por código o EAN..." inputmode="numeric"
+                                                pattern="[0-9]*" maxlength="20" autocomplete="off">
+                                            <button id="btnBoletaBuscar" class="btn btn-primary fw-bold px-3"
+                                                type="button">
                                                 <i class="fas fa-search me-1"></i> Buscar
                                             </button>
                                         </div>
-                                        <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">
-                                            <i class="fas fa-keyboard text-primary me-1"></i> Buscar por código [F1] | Pulsa Enter para buscar
+                                        <small class="text-muted d-none d-lg-block mt-1" style="font-size: 0.7rem;">
+                                            Ingresa solo números y presiona <kbd>Enter</kbd> para autocompletar.
                                         </small>
                                     </div>
 
-                                    <!-- Formulario de Campos del Producto -->
-                                    <div class="boleta-subcard p-3 rounded border d-flex flex-column gap-2 flex-grow-1">
-                                        <!-- 1. Descripción con Autocompletado Referente (Máx 3 líneas) -->
-                                        <div class="position-relative">
-                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <label class="form-label fw-bold text-dark mb-0" for="boletaDescripcion">
-                                                    📄 DESCRIPCIÓN:
-                                                </label>
-                                                <span class="badge bg-light text-primary border" style="font-size: 0.68rem;">
-                                                    <i class="fas fa-magic me-1"></i> Referentes automáticos
-                                                </span>
-                                            </div>
-                                            <div class="input-group">
-                                                <input type="text" id="boletaDescripcion" class="form-control" placeholder="Escribe para buscar (ej. Ninet, Paracetamol...) o manual" autocomplete="off">
-                                                <button class="btn btn-outline-secondary" type="button" id="btnBoletaLimpiarDesc" title="Borrar texto">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </div>
-                                            <!-- Menú desplegable flotante con máximo 3 líneas referentes -->
-                                            <div id="boletaSugerenciasDescripcion" class="list-group position-absolute w-100 shadow-lg border rounded-3 mt-1 d-none" style="z-index: 1060; max-height: 220px; overflow-y: auto;">
-                                            </div>
-                                            <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">
-                                                <i class="fas fa-keyboard text-primary me-1"></i> Pulsa <strong class="text-dark">Flecha Abajo [↓]</strong> para seleccionar y <strong class="text-dark">Enter [↵]</strong> para aceptar.
-                                            </small>
-                                        </div>
-
-                                        <!-- 2. Laboratorio -->
-                                        <div>
-                                            <label class="form-label fw-bold text-dark mb-1" for="boletaLab">
-                                                🏢 LABORATORIO:
-                                            </label>
-                                            <input type="text" id="boletaLab" class="form-control" placeholder="Laboratorio fabricante">
-                                        </div>
-
-                                        <!-- 3 y 4. Presentación, Cantidad y Costo -->
-                                        <div class="row g-2">
-                                            <div class="col-4">
-                                                <label class="form-label fw-bold text-dark mb-1" for="boletaPresentacion">
-                                                    📦 PRESENTACIÓN:
-                                                </label>
-                                                <select id="boletaPresentacion" class="form-select fw-bold text-primary">
-                                                    <option value="CAJA">CAJA</option>
-                                                    <option value="BLÍSTER">BLÍSTER</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-4">
-                                                <label class="form-label fw-bold text-dark mb-1" for="boletaCantidad">
-                                                    🔢 CANTIDAD:
-                                                </label>
-                                                <div class="input-group">
-                                                    <button class="btn btn-outline-secondary px-2 fw-bold" type="button" id="btnBoletaCantMenosForm" title="Restar 1">−</button>
-                                                    <input type="number" id="boletaCantidad" class="form-control text-center fw-bold" value="1" min="1" max="999">
-                                                    <button class="btn btn-outline-secondary px-2 fw-bold" type="button" id="btnBoletaCantMasForm" title="Sumar 1">+</button>
-                                                </div>
-                                            </div>
-                                            <div class="col-4">
-                                                <label class="form-label fw-bold text-dark mb-1" for="boletaCosto">
-                                                    💰 COSTO UNIT. (S/.): <span class="text-danger">*</span>
-                                                </label>
-                                                <div class="input-group">
-                                                    <span class="input-group-text fw-bold bg-light">S/</span>
-                                                    <input type="text" id="boletaCosto" class="form-control fw-bold" placeholder="0.00" inputmode="decimal">
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <small class="text-muted" style="font-size: 0.72rem;">
-                                            * Presiona <strong>Enter</strong> en costo para agregar a la boleta.
-                                        </small>
-
-                                        <!-- Botones de Acción del Formulario -->
-                                        <div class="d-flex gap-2 mt-auto pt-3">
-                                            <button type="button" id="btnBoletaLimpiarCampos" class="btn btn-outline-secondary flex-fill" title="Limpiar campos [Tecla Alt]">
-                                                <i class="fas fa-eraser me-1"></i> Limpiar [Alt]
+                                    <!-- 2. Descripción con Autocompletado Referente -->
+                                    <div class="position-relative">
+                                        <label class="form-label" for="boletaDescripcion">
+                                            📄 DESCRIPCIÓN:
+                                        </label>
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" id="boletaDescripcion" class="form-control"
+                                                placeholder="Nombre o descripción del producto..." autocomplete="off">
+                                            <button class="btn btn-outline-secondary px-2" type="button"
+                                                id="btnBoletaLimpiarDesc" title="Borrar texto">
+                                                <i class="fas fa-times"></i>
                                             </button>
-                                            <button type="button" id="btnBoletaAgregar" class="btn btn-success fw-bold flex-fill shadow-sm btn-agregar-boleta" style="background: linear-gradient(135deg, #10b981, #059669); border: none;">
-                                                <i class="fas fa-plus-circle me-1"></i> Agregar a Boleta <i class="fas fa-arrow-right ms-1 d-none d-lg-inline"></i>
+                                        </div>
+                                        <!-- Menú desplegable flotante -->
+                                        <div id="boletaSugerenciasDescripcion"
+                                            class="list-group position-absolute w-100 shadow-lg border rounded-3 mt-1 d-none"
+                                            style="z-index: 1060; max-height: 190px; overflow-y: auto;">
+                                        </div>
+                                    </div>
+
+                                    <!-- 3. Laboratorio -->
+                                    <div>
+                                        <label class="form-label" for="boletaLab">
+                                            🏢 LABORATORIO:
+                                        </label>
+                                        <input type="text" id="boletaLab" class="form-control form-control-sm"
+                                            placeholder="Laboratorio">
+                                    </div>
+
+                                    <!-- 4. Fila 3 Columnas: Presentación, Cantidad y Costo -->
+                                    <div class="row g-1 g-lg-2 boleta-mobile-3col align-items-end">
+                                        <div class="col-4">
+                                            <label class="form-label" for="boletaPresentacion">
+                                                PRESENTACIÓN:
+                                            </label>
+                                            <select id="boletaPresentacion" class="form-select form-select-sm fw-bold">
+                                                <option value="CAJA">CAJA</option>
+                                                <option value="BLÍSTER">BLÍSTER</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="form-label text-center d-block" for="boletaCantidad">
+                                                🔢 CANTIDAD:
+                                            </label>
+                                            <div class="input-group input-group-sm">
+                                                <button class="btn btn-outline-secondary fw-bold" type="button"
+                                                    id="btnBoletaCantMenosForm" title="Restar 1">−</button>
+                                                <input type="number" id="boletaCantidad"
+                                                    class="form-control text-center fw-bold" value="1" min="1"
+                                                    max="999">
+                                                <button class="btn btn-outline-secondary fw-bold" type="button"
+                                                    id="btnBoletaCantMasForm" title="Sumar 1">+</button>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <label class="form-label" for="boletaCosto">
+                                                💰 COSTO
+                                            </label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text fw-bold bg-light">S/</span>
+                                                <input type="text" id="boletaCosto" class="form-control fw-bold"
+                                                    placeholder="0.00" inputmode="decimal">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 5. Botones de Acción (Limpiar / Agregar a Boleta) -->
+                                    <div class="row g-2 mt-1">
+                                        <div class="col-6">
+                                            <button type="button" id="btnBoletaLimpiarCampos"
+                                                class="btn btn-outline-secondary btn-sm w-100 fw-bold py-2"
+                                                title="Limpiar campos [Tecla Alt]">
+                                                <i class="fas fa-eraser me-1"></i> Limpiar
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button type="button" id="btnBoletaAgregar"
+                                                class="btn btn-success btn-sm w-100 fw-bold py-2 shadow-sm btn-agregar-boleta"
+                                                style="background: linear-gradient(135deg, #059669, #10b981); border: none;">
+                                                Agregar a Boleta <i class="fas fa-arrow-right ms-1"></i>
                                             </button>
                                         </div>
                                     </div>
@@ -591,82 +669,104 @@
                             </div>
                         </div>
 
-                        <!-- ================= PANTALLA 2: BOLETA EN VIVO Y TOTALES (DERECHA) ================= -->
-                        <div class="col-lg-7 d-flex flex-column">
-                            <div class="card border-0 shadow-sm h-100 boleta-panel-pantalla boleta-panel-right d-flex flex-column">
-                                <div class="card-header bg-white py-2 px-3 border-bottom d-flex align-items-center justify-content-between">
+                        <!-- ================= PANTALLA 2: BOLETA EN VIVO Y TOTALES ================= -->
+                        <div class="col-12 col-lg-7 d-flex flex-column">
+                            <div class="card border-0 shadow-sm h-100 boleta-panel-pantalla boleta-panel-right">
+                                <div
+                                    class="card-header bg-white py-2 px-2 px-lg-3 border-bottom d-flex align-items-center justify-content-between">
                                     <div class="d-flex align-items-center gap-2">
-                                        <span class="badge bg-success px-2 py-1"><i class="fas fa-receipt me-1"></i> PANTALLA 2</span>
-                                        <span class="fw-bold text-dark small text-uppercase">Boleta en Vivo (<span id="boletaTotalItems">0</span> ítems)</span>
+                                        <span class="badge bg-success px-2 py-1" style="font-size: 0.7rem;">
+                                            <i class="fas fa-receipt me-1"></i> PANTALLA 2
+                                        </span>
+                                        <span class="fw-bold text-dark text-uppercase" style="font-size: 0.8rem;">
+                                            BOLETA EN VIVO (<span id="boletaTotalItems">0</span> ÍTEMS)
+                                        </span>
                                     </div>
-                                    <button type="button" id="btnBoletaVaciar" class="btn btn-sm btn-outline-danger py-0 px-2" title="Vaciar boleta y campos [Tecla Ctrl]">
-                                        <i class="fas fa-trash-alt me-1"></i> Vaciar Todo [Ctrl]
+                                    <button type="button" id="btnBoletaVaciar"
+                                        class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold"
+                                        style="font-size: 0.74rem;" title="Vaciar boleta y campos [Tecla Ctrl]">
+                                        Vaciar Todo
                                     </button>
                                 </div>
-                                <div class="card-body p-3 d-flex flex-column gap-3 flex-grow-1">
+                                <div class="card-body p-2 p-lg-3 d-flex flex-column justify-content-between gap-2">
 
                                     <!-- Tabla de Productos en la Boleta -->
-                                    <div class="table-responsive rounded border bg-white boleta-table-wrapper flex-grow-1" style="max-height: 250px; min-height: 190px;">
-                                        <table id="boletaTable" class="table table-hover table-striped align-middle mb-0 text-center">
+                                    <div
+                                        class="table-responsive rounded border bg-white boleta-table-wrapper flex-grow-1">
+                                        <table id="boletaTable"
+                                            class="table table-hover table-striped align-middle mb-0 text-center">
                                             <thead class="table-light sticky-top">
                                                 <tr>
-                                                    <th style="width: 40px;">#</th>
+                                                    <th style="width: 28px;">#</th>
                                                     <th class="text-start">DESCRIPCIÓN</th>
-                                                    <th class="text-start" style="width: 115px;">LABORATORIO</th>
-                                                    <th style="width: 95px;">PRESENTACIÓN</th>
-                                                    <th style="width: 110px;">CANTIDAD</th>
-                                                    <th style="width: 105px;" class="text-end">COSTO (S/.)</th>
-                                                    <th style="width: 50px;">ACCIÓN</th>
+                                                    <th class="text-start">LABORATORIO</th>
+                                                    <th>PRESENTACIÓN</th>
+                                                    <th>CANT.</th>
+                                                    <th class="text-end">COSTO</th>
+                                                    <th style="width: 36px;"></th>
                                                 </tr>
                                             </thead>
                                             <tbody id="boletaTableBody">
                                                 <tr>
-                                                    <td colspan="7" class="text-muted py-4">
-                                                        <i class="fas fa-info-circle me-1"></i> No se han agregado productos a la boleta aún.
+                                                    <td colspan="7" class="text-muted py-3">
+                                                        <i class="fas fa-info-circle me-1"></i> No se han agregado
+                                                        productos a la boleta aún.
                                                     </td>
                                                 </tr>
                                             </tbody>
                                         </table>
                                     </div>
 
-                                    <!-- Panel de Totales, Monto del Cliente y Vuelto -->
-                                    <div class="boleta-subcard p-3 rounded border bg-white mt-auto">
-                                        <div class="row g-2 align-items-center">
-                                            <!-- Suma de Costos -->
-                                            <div class="col-md-4">
-                                                <div class="p-2 rounded text-center border shadow-xs" style="background-color: #f1f5f9; border-color: #cbd5e1 !important;">
-                                                    <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.72rem;">
-                                                        <i class="fas fa-calculator me-1"></i> Suma de Costos
-                                                    </div>
-                                                    <div class="fs-4 fw-bold text-primary mt-1" id="boletaSumaCostos">S/ 0.00</div>
+                                    <!-- Panel de Totales en 3 Columnas -->
+                                    <div class="row g-1 g-lg-2 boleta-totales-grid align-items-stretch">
+                                        <!-- Columna 1: Suma de Costos -->
+                                        <div class="col-4">
+                                            <div class="totales-box text-center border"
+                                                style="background-color: #eaf2ff; border-color: #93c5fd !important;">
+                                                <div class="totales-title text-dark">
+                                                    SUMA DE COSTOS
+                                                </div>
+                                                <div id="boletaSumaCostos">S/ 0.00</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Columna 2: Monto Cliente -->
+                                        <div class="col-4">
+                                            <div class="totales-box text-center border"
+                                                style="background-color: #f8fafc; border-color: #cbd5e1 !important;">
+                                                <label class="totales-title text-dark mb-1 d-block"
+                                                    for="boletaMontoCliente">
+                                                    <i class="fas fa-hand-holding-usd text-success me-1"></i>MONTO CLIENTE
+                                                </label>
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text bg-light fw-bold px-1"
+                                                        style="font-size: 0.72rem;">S/</span>
+                                                    <input type="text" id="boletaMontoCliente"
+                                                        class="form-control fw-bold" placeholder="0.00" value="0.00"
+                                                        inputmode="decimal">
                                                 </div>
                                             </div>
-                                            <!-- Monto del Cliente -->
-                                            <div class="col-md-4">
-                                                <div class="p-2 rounded border shadow-xs" style="background-color: #f8fafc; border-color: #cbd5e1 !important;">
-                                                    <label class="form-label small fw-bold text-uppercase text-secondary mb-1 d-block text-truncate" for="boletaMontoCliente" style="font-size: 0.72rem;">
-                                                        <i class="fas fa-hand-holding-usd me-1 text-success"></i> Monto Cliente:
-                                                    </label>
-                                                    <div class="input-group input-group-sm">
-                                                        <span class="input-group-text bg-white fw-bold">S/</span>
-                                                        <input type="text" id="boletaMontoCliente" class="form-control fw-bold" placeholder="0.00" value="0.00" inputmode="decimal">
-                                                    </div>
-                                                    <small class="text-muted d-block text-truncate" style="font-size: 0.68rem;">Efectivo entregado</small>
+                                        </div>
+
+                                        <!-- Columna 3: Diferencia / Vuelto -->
+                                        <div class="col-4">
+                                            <div id="boletaDiferenciaCard" class="totales-box text-center border"
+                                                style="background-color: #e6faee; border-color: #6ee7b7 !important;">
+                                                <label id="boletaDiferenciaTitulo"
+                                                    class="totales-title text-dark mb-0 d-block"
+                                                    for="boletaDiferenciaSoles">
+                                                    DIFERENCIA / VUELTO
+                                                </label>
+                                                <div class="input-group input-group-sm">
+                                                    <span id="boletaDiferenciaMoneda"
+                                                        class="input-group-text fw-bold text-success">S/</span>
+                                                    <input type="text" id="boletaDiferenciaSoles"
+                                                        class="form-control fw-bold text-success text-center"
+                                                        placeholder="0.00" value="0.00" inputmode="decimal" readonly>
                                                 </div>
-                                            </div>
-                                            <!-- Diferencia / Vuelto -->
-                                            <div class="col-md-4">
-                                                <div id="boletaDiferenciaCard" class="p-2 rounded text-center border shadow-xs" style="background-color: #ecfdf5; border-color: #a7f3d0 !important;">
-                                                    <label id="boletaDiferenciaTitulo" class="form-label small fw-bold text-uppercase text-success mb-1 d-block text-truncate" for="boletaDiferenciaSoles" style="font-size: 0.72rem;">
-                                                        <i class="fas fa-coins me-1"></i> Diferencia / Vuelto:
-                                                    </label>
-                                                    <div class="input-group input-group-sm">
-                                                        <span id="boletaDiferenciaMoneda" class="input-group-text bg-white fw-bold text-success">S/</span>
-                                                        <input type="text" id="boletaDiferenciaSoles" class="form-control fw-bold text-success fs-6 text-center" placeholder="0.00" value="0.00" inputmode="decimal">
-                                                    </div>
-                                                    <div id="boletaDiferenciaEtiqueta" class="small fw-bold text-success mt-1 text-truncate" style="font-size: 0.68rem;">
-                                                        Vuelto a favor del cliente
-                                                    </div>
+                                                <div id="boletaDiferenciaEtiqueta"
+                                                    class="fw-bold text-success text-truncate d-none">
+                                                    Vuelto a favor
                                                 </div>
                                             </div>
                                         </div>
@@ -679,23 +779,31 @@
                     </div>
                 </div>
 
-                <!-- FOOTER DEL MODAL -->
-                <div class="modal-footer bg-white py-2 px-3 d-flex justify-content-between border-top align-items-center">
-                    <div class="d-flex align-items-center gap-1 text-muted small">
-                        <span class="badge bg-light text-secondary border me-1"><i class="fas fa-keyboard"></i> Atajos:</span>
-                        <span class="badge bg-secondary-subtle text-dark border">F1: Buscar</span>
-                        <span class="badge bg-secondary-subtle text-dark border">Alt: Limpiar</span>
-                        <span class="badge bg-secondary-subtle text-dark border">Ctrl: Vaciar</span>
-                        <span class="badge bg-secondary-subtle text-dark border">Doble Enter: Imprimir</span>
+                <!-- FOOTER DEL MODAL (PC: HORIZONTAL | CELULAR: BOTÓN VERDE ARRIBA + CERRAR Y FORMATO A4 ABAJO) -->
+                <div class="modal-footer bg-white py-2 px-3 border-top boleta-modal-footer">
+                    <div class="text-muted small d-none d-lg-flex align-items-center gap-2 flex-wrap me-auto">
+                        <span><kbd class="bg-secondary">Enter</kbd> Avanzar / Agregar</span>
+                        <span>•</span>
+                        <span><kbd class="bg-success">Doble Enter</kbd> Imprimir 80mm</span>
+                        <span>•</span>
+                        <span><kbd class="bg-warning text-dark">Alt</kbd> Limpiar</span>
+                        <span>•</span>
+                        <span><kbd class="bg-danger">Ctrl</kbd> Vaciar</span>
                     </div>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <div class="boleta-footer-actions">
+                        <button type="button" class="btn btn-outline-secondary fw-bold px-3 boleta-btn-cerrar"
+                            data-bs-dismiss="modal">
                             <i class="fas fa-times me-1"></i> Cerrar
                         </button>
-                        <button type="button" id="btnImprimirBoletaA4" class="btn btn-outline-primary fw-bold" title="Imprimir en hoja A4 estándar (2 Copias: Entregado y Recibido)">
-                            <i class="fas fa-file-alt me-1"></i> Formato A4 (2 Copias)
+                        <button type="button" id="btnImprimirBoletaA4"
+                            class="btn btn-outline-primary fw-bold px-3 shadow-sm boleta-btn-a4"
+                            title="Imprimir en hoja A4 estándar (2 Copias: Entregado y Recibido)">
+                            <i class="fas fa-file-alt me-1"></i> Formato A4
                         </button>
-                        <button type="button" id="btnImprimirBoletaPdf" class="btn btn-success fw-bold px-3 px-md-4 shadow-sm" style="background: linear-gradient(135deg, #10b981, #059669); border: none;" title="Imprimir en ticketera térmica NCR de 80mm [Doble Enter]">
+                        <button type="button" id="btnImprimirBoletaPdf"
+                            class="btn btn-success fw-bold px-4 shadow-sm boleta-btn-ticket"
+                            style="background: linear-gradient(135deg, #059669, #10b981); border: none;"
+                            title="Imprimir en ticketera térmica NCR de 80mm [Doble Enter]">
                             <i class="fas fa-receipt me-1"></i> Imprimir Ticket 80mm [Doble Enter]
                         </button>
                     </div>
@@ -704,29 +812,14 @@
         </div>
     </div>
 
-    <!-- Scripts externos -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
-
-    <!-- Base de Datos Local de Lotes -->
-    <script src="Data_Lectura_Interpretativa_Lote.js"></script>
-
-    <!-- Lógica de la aplicación -->
-    <script src="app.js"></script>
-
+    <!-- MODAL: Información de Lote y Vida Útil -->
     <div class="modal fade" id="loteInfoModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Información de Lote y Vida Útil <small style="font-size:12px;">(ESC para
                             cerrar)</small></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="row">
@@ -747,6 +840,22 @@
             </div>
         </div>
     </div>
+
+    <!-- Scripts externos -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <!-- Base de Datos Local de Lotes -->
+    <script src="Data_Lectura_Interpretativa_Lote.js"></script>
+
+    <!-- Lógica de la aplicación -->
+    <script src="app.js"></script>
 
     <script>
         let loteInfoModal;
