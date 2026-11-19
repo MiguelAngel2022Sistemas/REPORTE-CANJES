@@ -962,6 +962,23 @@ function abrirModalBoletaManual() {
     }
 }
 
+function activarAvisoManualDescripcion(inputDesc) {
+    if (!inputDesc) return;
+    inputDesc.value = 'Por favor escribe tu producto manual';
+    inputDesc.dataset.avisoManual = '1';
+    inputDesc.classList.add('boleta-desc-aviso-manual');
+    inputDesc.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function limpiarAvisoManualDescripcion(inputDesc) {
+    if (!inputDesc) return;
+    if (inputDesc.dataset.avisoManual === '1') {
+        inputDesc.value = '';
+        delete inputDesc.dataset.avisoManual;
+    }
+    inputDesc.classList.remove('boleta-desc-aviso-manual');
+}
+
 function buscarProductoBoleta() {
     if (!verificarExcelCargadoBoleta(true)) {
         return;
@@ -1007,14 +1024,15 @@ function buscarProductoBoleta() {
         }).then(() => {
             const inputDesc = document.getElementById('boletaDescripcion');
             if (inputDesc) {
-                inputDesc.focus();
-                inputDesc.select();
+                activarAvisoManualDescripcion(inputDesc);
             }
         });
         return;
     }
 
-    document.getElementById('boletaDescripcion').value = producto['DESCRIPCION'] || '';
+    const inputDescEncontrado = document.getElementById('boletaDescripcion');
+    limpiarAvisoManualDescripcion(inputDescEncontrado);
+    if (inputDescEncontrado) inputDescEncontrado.value = producto['DESCRIPCION'] || '';
     document.getElementById('boletaLab').value = producto['LABORATORIO'] || '';
 
     // Ocultar sugerencias si estuvieran abiertas
@@ -1033,7 +1051,9 @@ function buscarProductoBoleta() {
 
 function limpiarCamposBoleta() {
     document.getElementById('boletaInputCodigo').value = '';
-    document.getElementById('boletaDescripcion').value = '';
+    const inputDesc = document.getElementById('boletaDescripcion');
+    limpiarAvisoManualDescripcion(inputDesc);
+    if (inputDesc) inputDesc.value = '';
     document.getElementById('boletaLab').value = '';
     document.getElementById('boletaPresentacion').value = 'CAJA';
     const inputCant = document.getElementById('boletaCantidad');
@@ -1060,6 +1080,7 @@ function configurarAutocompletadoDescripcion() {
 
     if (btnLimpiarDesc) {
         btnLimpiarDesc.addEventListener('click', () => {
+            limpiarAvisoManualDescripcion(inputDesc);
             inputDesc.value = '';
             panelSugerencias.innerHTML = '';
             panelSugerencias.classList.add('d-none');
@@ -1068,6 +1089,19 @@ function configurarAutocompletadoDescripcion() {
             inputDesc.focus();
         });
     }
+
+    // Al hacer clic o empezar a escribir en Descripción, borrar automáticamente el aviso amarillo
+    inputDesc.addEventListener('mousedown', () => {
+        limpiarAvisoManualDescripcion(inputDesc);
+    });
+    inputDesc.addEventListener('click', () => {
+        limpiarAvisoManualDescripcion(inputDesc);
+    });
+    inputDesc.addEventListener('keydown', (e) => {
+        if (inputDesc.dataset.avisoManual === '1' && (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete')) {
+            limpiarAvisoManualDescripcion(inputDesc);
+        }
+    });
 
     function actualizarSeleccionVisual() {
         const items = panelSugerencias.querySelectorAll('.boleta-sugerencia-item');
@@ -1486,7 +1520,8 @@ function renderTablaBoleta() {
 }
 
 function agregarItemBoleta() {
-    const descripcion = document.getElementById('boletaDescripcion').value.trim();
+    const inputDescEl = document.getElementById('boletaDescripcion');
+    const descripcion = (inputDescEl && inputDescEl.dataset.avisoManual !== '1') ? inputDescEl.value.trim() : '';
     const laboratorio = document.getElementById('boletaLab').value.trim();
     const presentacion = document.getElementById('boletaPresentacion').value;
     const inputCosto = document.getElementById('boletaCosto');
