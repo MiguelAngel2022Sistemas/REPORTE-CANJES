@@ -6,7 +6,7 @@
 .welcome-screen.welcome-clean-3d {
     min-height: 100vh !important;
     width: 100% !important;
-    display: flex !important;
+    display: flex;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
@@ -16,6 +16,10 @@
     background-attachment: scroll !important;
     text-align: center !important;
     color: #0f172a !important;
+}
+
+.welcome-screen.welcome-clean-3d.d-none {
+    display: none !important;
 }
 
 .clean-welcome-wrapper {
