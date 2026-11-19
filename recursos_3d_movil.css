@@ -255,6 +255,18 @@
 }
 
 /* =========================================================
+   AVISO AMARILLO EN DESCRIPCIÓN DE BOLETA MANUAL
+   ========================================================= */
+#boletaDescripcion.boleta-desc-aviso-manual {
+    background-color: #fde047 !important;
+    color: #000000 !important;
+    font-weight: 700 !important;
+    border: 2px solid #ca8a04 !important;
+    box-shadow: 0 0 0 0.2rem rgba(250, 204, 21, 0.35) !important;
+    cursor: text !important;
+}
+
+/* =========================================================
    BOLETA MANUAL - FORMATO PC (ESCRITORIO >= 992px)
    ========================================================= */
 @media (min-width: 992px) {
