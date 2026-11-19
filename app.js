@@ -2289,10 +2289,7 @@ window.abrirModalBoletaManual = abrirModalBoletaManual;
 window.abrirModalExcel = function () {
     const fileModalEl = document.getElementById('fileModal');
     if (!fileModal && fileModalEl && window.bootstrap) {
-        fileModal = bootstrap.Modal.getOrCreateInstance(fileModalEl, {
-            backdrop: 'static',
-            keyboard: false
-        });
+        fileModal = bootstrap.Modal.getOrCreateInstance(fileModalEl);
     }
     if (fileModal) {
         fileModal.show();
@@ -2312,10 +2309,7 @@ function inicializarAplicacionCanjes() {
 
     const fileModalEl = document.getElementById('fileModal');
     if (fileModalEl && window.bootstrap) {
-        fileModal = bootstrap.Modal.getOrCreateInstance(fileModalEl, {
-            backdrop: 'static',
-            keyboard: false
-        });
+        fileModal = bootstrap.Modal.getOrCreateInstance(fileModalEl);
     }
 
     const deleteModalEl = document.getElementById('deleteModal');
@@ -2343,28 +2337,13 @@ function inicializarAplicacionCanjes() {
             }
         });
 
-        // Al cerrar: Restaurar scroll y estado de modal previo
+        // Al cerrar: Restaurar scroll y estado de modal previo (la X y Cancelar siempre retroceden)
         fileModalEl.addEventListener('hidden.bs.modal', function () {
             fileModalEl.style.zIndex = '';
             const modalBoleta = document.getElementById('modalBoletaManual');
             if (modalBoleta && modalBoleta.classList.contains('show')) {
                 document.body.classList.add('modal-open');
                 modalBoleta.focus();
-            }
-        });
-
-        // Validar cierre obligatorio solo si no hay ningún archivo cargado y está en bienvenida
-        fileModalEl.addEventListener('hide.bs.modal', function (e) {
-            const fileInput = document.getElementById('fileInput');
-            const enBienvenida = !document.getElementById('welcomeScreen').classList.contains('d-none');
-            if (enBienvenida && !AppState.archivoActual && (!fileInput || !fileInput.files.length)) {
-                e.preventDefault();
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Archivo requerido',
-                    text: 'Debes seleccionar tu archivo Excel para continuar.',
-                    confirmButtonColor: '#009739'
-                });
             }
         });
     }
@@ -2714,7 +2693,18 @@ Brindar información CLARA, SEGURA, PRÁCTICA y basada en evidencia.
         if (fileInput && fileInput.files.length > 0) {
             procesarArchivoExcel(fileInput.files[0]);
         } else {
-            mostrarAlerta('Selecciona un archivo', 'warning');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Archivo requerido',
+                text: 'Debes seleccionar tu archivo Excel para continuar.',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#009739',
+                showCloseButton: true
+            }).then((result) => {
+                if (result.dismiss === Swal.DismissReason.close) {
+                    fileModal?.hide();
+                }
+            });
         }
     });
 
