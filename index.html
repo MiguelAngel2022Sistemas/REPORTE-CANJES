@@ -13,8 +13,8 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap">
     <link rel="icon" href="MIFARMA_ICONS.png" type="image/png">
 
-    <link rel="stylesheet" href="styles.css?v=20261119a">
-    <link rel="stylesheet" href="recursos_3d_movil.css?v=20261119a">
+    <link rel="stylesheet" href="styles.css?v=20261119c">
+    <link rel="stylesheet" href="recursos_3d_movil.css?v=20261119c">
 </head>
 
 <body>
@@ -357,7 +357,7 @@
             <div class="modal-content">
                 <div class="modal-header text-white" style="background-color: #1c8ffa;">
                     <h5 class="modal-title">Seleccionar archivo</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
@@ -806,7 +806,7 @@
     <script src="Data_Lectura_Interpretativa_Lote.js"></script>
 
     <!-- Lógica de la aplicación -->
-    <script src="app.js?v=20261112d"></script>
+    <script src="app.js?v=20261119b"></script>
 
     <script>
         let loteInfoModal;
@@ -823,7 +823,7 @@
                 } else {
                     document.getElementById('btnNuevoArchivo')?.addEventListener('click', () => {
                         const fm = document.getElementById('fileModal');
-                        if (fm && window.bootstrap) bootstrap.Modal.getOrCreateInstance(fm, { backdrop: 'static', keyboard: false }).show();
+                        if (fm && window.bootstrap) bootstrap.Modal.getOrCreateInstance(fm).show();
                     });
                     ['btnBoletaManualWelcome', 'btnBoletaManualHeader', 'btnBoletaManualBarra'].forEach(id => {
                         document.getElementById(id)?.addEventListener('click', () => {
